@@ -11,7 +11,7 @@ public class Location : BaseEntity
     public DateTime DateDebut { get; set; }
     public DateTime DateFinPrevue { get; set; }
     public DateTime? DateRetourEffective { get; set; }
-    public StatutLocation Statut { get; set; } = StatutLocation.Brouillon;
+    public StatutLocation Statut { get; set; } = StatutLocation.EnCours;
     public decimal Caution { get; set; }
     public decimal RemiseGlobale { get; set; }
     public string Note { get; set; } = string.Empty;

@@ -17,6 +17,8 @@ public sealed class LocationListRow
 
     public static LocationListRow Create(Models.Location loc, string clientNom, string devise, ILocaleService locale)
     {
+        var statut = LocationStatutLabels.FromQuantites(
+            (loc.Lignes ?? []).Select(l => (l.Quantite, l.QuantiteRetournee)));
         var (_, _, ttc) = DocumentTotalsHelper.LocationTotals(loc.Lignes ?? [], loc.RemiseGlobale);
         return new LocationListRow
         {
@@ -24,7 +26,7 @@ public sealed class LocationListRow
             ClientNom = clientNom,
             DateShort = loc.Date.ToString("d", CultureInfo.CurrentCulture),
             PeriodeLabel = $"{loc.DateDebut:dd/MM} → {loc.DateFinPrevue:dd/MM}",
-            StatutLabel = LocationStatutLabels.Format(locale, loc.Statut),
+            StatutLabel = LocationStatutLabels.Format(locale, statut),
             TtcLabel = $"{ttc:N2} {devise}",
             NotePreview = DocumentListFormat.NotePreview(loc.Note),
         };

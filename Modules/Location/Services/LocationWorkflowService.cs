@@ -33,9 +33,6 @@ public sealed class LocationWorkflowService : ILocationWorkflowService
 
     private Task ApplyStockAsync(AppDbContext db, Models.Location loc, int? userId, CancellationToken cancellationToken)
     {
-        if (loc.Statut is StatutLocation.Brouillon or StatutLocation.Annulee)
-            return _stock.ResyncLocationStockAsync(db, loc.Id, loc.Numero, [], userId, cancellationToken);
-
         var lines = loc.Lignes
             .Where(l => l.ProduitId is > 0)
             .Select(l =>

@@ -325,11 +325,9 @@ public static class UiTranslations
         ["Loc_LblCaution"] = ("Caution", "التأمين"),
         ["Loc_ColQteLouee"] = ("Qté louée", "الكمية المكتراة"),
         ["Loc_ColQteRetour"] = ("Qté retournée", "الكمية المرجعة"),
-        ["Loc_Statut_Brouillon"] = ("Brouillon", "مسودة"),
         ["Loc_Statut_EnCours"] = ("En cours", "جارٍ"),
         ["Loc_Statut_Partiel"] = ("Retour partiel", "إرجاع جزئي"),
         ["Loc_Statut_Retournee"] = ("Retournée", "مرجعة"),
-        ["Loc_Statut_Annulee"] = ("Annulée", "ملغاة"),
     };
 
     public static string Get(string key, string languageTag)

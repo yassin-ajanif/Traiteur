@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -60,7 +61,6 @@ public partial class LocationEditViewModel : BaseViewModel
         Lignes.CollectionChanged += LignesOnCollectionChanged;
         Title = _locale.T("Loc_Title");
         RefreshUi();
-        RefreshStatutOptions();
     }
 
     [ObservableProperty] private string _btnBack = string.Empty;
@@ -93,7 +93,6 @@ public partial class LocationEditViewModel : BaseViewModel
     public AutoCompleteFilterPredicate<object?> CatalogAutocompleteFilter => DocumentCatalogAutoComplete.ItemFilter;
 
     public ObservableCollection<DocumentCatalogItem> AddLineSearchResults { get; } = [];
-    public ObservableCollection<StatutLocationOption> StatutOptions { get; } = [];
 
     [ObservableProperty] private decimal _totalHt;
     [ObservableProperty] private decimal _totalTva;
@@ -161,18 +160,8 @@ public partial class LocationEditViewModel : BaseViewModel
         LblDocColTva = _locale.T("DocLine_ColTva");
         LblDocColMontantHt = _locale.T("DocLine_ColMontantHt");
         LblDocColMontantTtc = _locale.T("DocLine_ColMontantTtc");
-        RefreshStatutOptions();
+        NotifyStatutChip();
         UpdateTotalLabels(TotalHt, TotalTva, TotalTtc);
-    }
-
-    private void RefreshStatutOptions()
-    {
-        var selected = SelectedStatut;
-        StatutOptions.Clear();
-        foreach (var s in LocationStatutLabels.All)
-            StatutOptions.Add(new StatutLocationOption(s, LocationStatutLabels.Format(_locale, s)));
-        SelectedStatut = StatutOptions.FirstOrDefault(o => o.Value == selected?.Value)
-            ?? StatutOptions.FirstOrDefault(o => o.Value == Statut);
     }
 
     public ObservableCollection<TiersEntity> Clients { get; } = [];
@@ -186,26 +175,25 @@ public partial class LocationEditViewModel : BaseViewModel
     [ObservableProperty] private DateTimeOffset _dateDebut = new(DateTime.Today);
     [ObservableProperty] private DateTimeOffset _dateFinPrevue = new(DateTime.Today.AddDays(1));
     [ObservableProperty] private DateTimeOffset? _dateRetourEffective;
-    [ObservableProperty] private StatutLocation _statut = StatutLocation.Brouillon;
-    [ObservableProperty] private StatutLocationOption? _selectedStatut;
+    [ObservableProperty] private StatutLocation _statut = StatutLocation.EnCours;
+    [ObservableProperty] private string _statutLabel = string.Empty;
+    [ObservableProperty] private IBrush _statutChipBackground = Brushes.Transparent;
+    [ObservableProperty] private IBrush _statutChipForeground = Brushes.Black;
+    [ObservableProperty] private IBrush _statutChipBorder = Brushes.Transparent;
     [ObservableProperty] private decimal _caution;
     [ObservableProperty] private string _note = string.Empty;
     [ObservableProperty] private LocationLineRow? _selectedLine;
 
-    public bool CanEdit => Statut != StatutLocation.Annulee;
-
     partial void OnLocationIdChanged(int? value) => RemoveLocationCommand.NotifyCanExecuteChanged();
-    partial void OnStatutChanged(StatutLocation value)
-    {
-        OnPropertyChanged(nameof(CanEdit));
-        if (SelectedStatut?.Value != value)
-            SelectedStatut = StatutOptions.FirstOrDefault(o => o.Value == value);
-    }
 
-    partial void OnSelectedStatutChanged(StatutLocationOption? value)
+    partial void OnStatutChanged(StatutLocation value) => NotifyStatutChip();
+
+    private void NotifyStatutChip()
     {
-        if (value != null && Statut != value.Value)
-            Statut = value.Value;
+        StatutLabel = LocationStatutLabels.Format(_locale, Statut);
+        StatutChipBackground = LocationStatutLabels.ChipBackground(Statut);
+        StatutChipForeground = LocationStatutLabels.ChipForeground(Statut);
+        StatutChipBorder = LocationStatutLabels.ChipBorder(Statut);
     }
 
     private bool CanRemoveLocation() => LocationId != null;
@@ -244,7 +232,7 @@ public partial class LocationEditViewModel : BaseViewModel
 
     partial void OnAddLineCatalogPickChanged(object? value)
     {
-        if (_suppressAddLinePick || !CanEdit) return;
+        if (_suppressAddLinePick) return;
         if (value is not DocumentCatalogItem item || item.Kind != DocumentCatalogKind.Product) return;
         _suppressAddLinePick = true;
         const decimal addQty = 1;
@@ -358,22 +346,18 @@ public partial class LocationEditViewModel : BaseViewModel
 
     private void RefreshDerivedStatut()
     {
-        if (Statut is StatutLocation.Brouillon or StatutLocation.Annulee)
-            return;
-
-        var anyOut = Lignes.Any(l => l.Quantite > l.QuantiteRetournee);
-        var anyReturned = Lignes.Any(l => l.QuantiteRetournee > 0);
-        var next = !anyOut && Lignes.Count > 0
-            ? StatutLocation.Retournee
-            : anyReturned
-                ? StatutLocation.PartiellementRetournee
-                : StatutLocation.EnCours;
+        var next = LocationStatutLabels.FromQuantites(
+            Lignes.Select(l => (l.Quantite, l.QuantiteRetournee)));
 
         if (Statut != next)
             Statut = next;
+        else
+            NotifyStatutChip();
 
         if (next == StatutLocation.Retournee && DateRetourEffective == null)
             DateRetourEffective = new DateTimeOffset(DateTime.Today);
+        else if (next != StatutLocation.Retournee)
+            DateRetourEffective = null;
     }
 
     partial void OnDeviseChanged(string value) => RefreshTotals();
@@ -415,11 +399,12 @@ public partial class LocationEditViewModel : BaseViewModel
             DateDebut = new DateTimeOffset(DateTime.Today);
             DateFinPrevue = new DateTimeOffset(DateTime.Today.AddDays(1));
             DateRetourEffective = null;
-            Statut = StatutLocation.Brouillon;
+            Statut = StatutLocation.EnCours;
             Caution = 0;
             Note = string.Empty;
             Title = _locale.T("Loc_NewTitle");
             RefreshTotals();
+            RefreshDerivedStatut();
             return;
         }
 
@@ -430,7 +415,7 @@ public partial class LocationEditViewModel : BaseViewModel
         DateDebut = new DateTimeOffset(b.DateDebut);
         DateFinPrevue = new DateTimeOffset(b.DateFinPrevue);
         DateRetourEffective = b.DateRetourEffective is { } dr ? new DateTimeOffset(dr) : null;
-        Statut = b.Statut;
+        Statut = LocationStatutLabels.Normalize(b.Statut);
         Caution = b.Caution;
         Note = b.Note;
         var produitIds = b.Lignes.Where(l => l.ProduitId is > 0).Select(l => l.ProduitId!.Value).Distinct().ToList();
@@ -455,6 +440,7 @@ public partial class LocationEditViewModel : BaseViewModel
 
         Title = _locale.Tf("Loc_TitleNum", Numero);
         RefreshTotals();
+        RefreshDerivedStatut();
         ResetAddProductSearch();
     }
 
@@ -473,7 +459,7 @@ public partial class LocationEditViewModel : BaseViewModel
     [RelayCommand]
     private void RemoveLine(LocationLineRow? row)
     {
-        if (!CanEdit || row == null) return;
+        if (row == null) return;
         Lignes.Remove(row);
     }
 
@@ -586,9 +572,4 @@ public partial class LocationEditViewModel : BaseViewModel
         _workspace.Open(list);
         list.LoadCommand.Execute(null);
     }
-}
-
-public sealed record StatutLocationOption(StatutLocation Value, string Label)
-{
-    public override string ToString() => Label;
 }
