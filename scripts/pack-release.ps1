@@ -10,7 +10,7 @@ $PublishDir = Join-Path $ProjectRoot "publish"
 $ReleaseDir = Join-Path $ProjectRoot "releases"
 
 $PackId = "Ecomati"
-$PackTitle = "Ecomati"
+$PackTitle = "AJIAL MOUNASABAT"
 
 Push-Location $ProjectRoot
 try {

@@ -9,7 +9,7 @@ public static class UiTranslations
     {
         ["Nav_Home"] = ("Accueil", "الرئيسية"),
         ["Nav_Pos"] = ("Point de vente", "نقطة البيع"),
-        ["Nav_Vente"] = ("Vente", "المبيعات"),
+        ["Nav_Vente"] = ("Location", "الكراء"),
         ["Nav_Achat"] = ("Achat", "المشتريات"),
         ["Nav_Clients"] = ("Clients", "الكليان"),
         ["Nav_Devis"] = ("Devis", "الدوفيات"),
@@ -70,7 +70,7 @@ public static class UiTranslations
 
     private static readonly IReadOnlyDictionary<string, (string Fr, string Ar)> Vm = new Dictionary<string, (string, string)>
     {
-        ["Win_AppTitle"] = ("Ecomati", "Ecomati"),
+        ["Win_AppTitle"] = ("AJIAL MOUNASABAT", "AJIAL MOUNASABAT"),
         ["Update_Banner"] = ("Une nouvelle mise à jour est disponible (v{0})", "يتوفر تحديث جديد (v{0})"),
         ["Update_BannerReady"] = ("Mise à jour prête — cliquez pour redémarrer (v{0})", "التحديث جاهز — انقر لإعادة التشغيل (v{0})"),
         ["Home_Welcome"] = ("Bienvenue. Utilisez le menu pour accéder aux modules.", "مرحباً. استخدم القائمة للوصول إلى الوحدات."),
