@@ -42,7 +42,20 @@
                 <TextBlock Grid.Column="1" Text="{Binding ClientNom}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="2" Text="{Binding DateShort}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="3" Text="{Binding PeriodeLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBlock Grid.Column="4" Text="{Binding StatutLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <Border Grid.Column="4"
+                        Padding="8,3"
+                        CornerRadius="4"
+                        BorderThickness="1"
+                        Background="{Binding StatutChipBackground}"
+                        BorderBrush="{Binding StatutChipBorder}"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,8,0">
+                  <TextBlock Text="{Binding StatutLabel}"
+                             FontSize="11"
+                             FontWeight="SemiBold"
+                             Foreground="{Binding StatutChipForeground}"/>
+                </Border>
                 <TextBlock Grid.Column="5" Text="{Binding TtcLabel}" VerticalAlignment="Center" FontWeight="SemiBold" TextAlignment="End" Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="6" Text="{Binding NotePreview}" VerticalAlignment="Center" Opacity="0.85" TextTrimming="CharacterEllipsis"/>
               </Grid>

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Avalonia.Media;
 using GestionCommerciale.Modules.Location.Models;
 using GestionCommerciale.Shared.Helpers;
 using GestionCommerciale.Shared.Services;
@@ -12,6 +13,9 @@ public sealed class LocationListRow
     public string DateShort { get; init; } = string.Empty;
     public string PeriodeLabel { get; init; } = string.Empty;
     public string StatutLabel { get; init; } = string.Empty;
+    public IBrush StatutChipBackground { get; init; } = Brushes.Transparent;
+    public IBrush StatutChipForeground { get; init; } = Brushes.Black;
+    public IBrush StatutChipBorder { get; init; } = Brushes.Transparent;
     public string TtcLabel { get; init; } = string.Empty;
     public string NotePreview { get; init; } = string.Empty;
 
@@ -27,6 +31,9 @@ public sealed class LocationListRow
             DateShort = loc.Date.ToString("d", CultureInfo.CurrentCulture),
             PeriodeLabel = $"{loc.DateDebut:dd/MM} → {loc.DateFinPrevue:dd/MM}",
             StatutLabel = LocationStatutLabels.Format(locale, statut),
+            StatutChipBackground = LocationStatutLabels.ChipBackground(statut),
+            StatutChipForeground = LocationStatutLabels.ChipForeground(statut),
+            StatutChipBorder = LocationStatutLabels.ChipBorder(statut),
             TtcLabel = $"{ttc:N2} {devise}",
             NotePreview = DocumentListFormat.NotePreview(loc.Note),
         };
