@@ -1,4 +1,3 @@
-using GestionCommerciale.Modules.Livraison.Models;
 using GestionCommerciale.Modules.Stock.Services;
 using GestionCommerciale.Shared.Database;
 using Microsoft.EntityFrameworkCore;
@@ -18,39 +17,28 @@ public sealed class BonLivraisonWorkflowService : IBonLivraisonWorkflowService
 
     public async Task ValiderAsync(int bonLivraisonId, int? userId, CancellationToken cancellationToken = default)
     {
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
-        await using var trx = await db.Database.BeginTransactionAsync(cancellationToken);
-
-        var bl = await db.BonsLivraison.Include(b => b.Lignes).FirstAsync(b => b.Id == bonLivraisonId, cancellationToken);
-
-        await _stock.ResyncBonLivraisonStockAsync(
-            db,
-            bonLivraisonId,
-            bl.Numero,
-            bl.Lignes
-                .Where(l => l.ProduitId is > 0)
-                .Select(l => (l.ProduitId!.Value, l.QuantiteLivree)),
-            userId,
-            cancellationToken);
-
-        await db.SaveChangesAsync(cancellationToken);
-        await trx.CommitAsync(cancellationToken);
+        // Stock for physical exits is owned by Location (rental), not BL.
+        // Clear any legacy BL stock movements so saving a BL never deducts qty.
+        await ClearBlStockAsync(bonLivraisonId, userId, cancellationToken);
     }
 
     public async Task ResyncStockFromLinesAsync(int bonLivraisonId, int? userId, CancellationToken cancellationToken = default)
     {
+        await ClearBlStockAsync(bonLivraisonId, userId, cancellationToken);
+    }
+
+    private async Task ClearBlStockAsync(int bonLivraisonId, int? userId, CancellationToken cancellationToken)
+    {
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
         await using var trx = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        var bl = await db.BonsLivraison.Include(b => b.Lignes).FirstAsync(b => b.Id == bonLivraisonId, cancellationToken);
+        var bl = await db.BonsLivraison.AsNoTracking().FirstAsync(b => b.Id == bonLivraisonId, cancellationToken);
 
         await _stock.ResyncBonLivraisonStockAsync(
             db,
             bonLivraisonId,
             bl.Numero,
-            bl.Lignes
-                .Where(l => l.ProduitId is > 0)
-                .Select(l => (l.ProduitId!.Value, l.QuantiteLivree)),
+            Enumerable.Empty<(int ProduitId, decimal QuantiteLivree)>(),
             userId,
             cancellationToken);
 

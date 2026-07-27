@@ -57,6 +57,10 @@ public sealed class StockMovementService : IStockMovementService
         });
     }
 
+    /// <summary>
+    /// Syncs stock for a BL origin. The Livraison UI always passes empty lines
+    /// (Location owns rental stock). POS may still pass quantities for till sales.
+    /// </summary>
     public Task ResyncBonLivraisonStockAsync(
         AppDbContext db,
         int bonLivraisonId,
