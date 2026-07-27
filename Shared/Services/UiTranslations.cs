@@ -16,6 +16,7 @@ public static class UiTranslations
         ["Nav_BCC"] = ("Bons de commande", "كوموندات الكليان"),
         ["Nav_BL"] = ("Bons de livraison", "بونات التسليم"),
         ["Nav_Location"] = ("Location", "الكراء"),
+        ["Nav_EtatClient"] = ("Etat client", "حالة العميل"),
         ["Nav_Factures"] = ("Facturation", "الفاكتورات"),
         ["Nav_Avoirs"] = ("Avoirs", "لافوارات"),
         ["Nav_AvoirFournisseur"] = ("Avoir fournisseur", "لافوارات ديال الفورنيصارات"),
@@ -331,6 +332,21 @@ public static class UiTranslations
         ["Loc_ToBlNeedSave"] = ("Enregistrez la location avant de créer un bon de livraison.", "احفظ الكراء قبل إنشاء أمر التسليم."),
         ["Loc_BlChip"] = ("BL {0}", "تسليم {0}"),
         ["Loc_BlNoteFrom"] = ("Location {0}", "كراء {0}"),
+
+        ["EtatClient_Search"] = ("Rechercher un client…", "بحث عن عميل…"),
+        ["EtatClient_EnRetardOnly"] = ("En retard uniquement", "المتأخر فقط"),
+        ["EtatClient_ColTel"] = ("Téléphone", "الهاتف"),
+        ["EtatClient_ColQteEncore"] = ("Qté encore", "الكمية المتبقية"),
+        ["EtatClient_ColLocations"] = ("Locations", "الكراءات"),
+        ["EtatClient_ColRetard"] = ("Retard", "متأخر"),
+        ["EtatClient_BackClients"] = ("← Clients", "← العملاء"),
+        ["EtatClient_OpenLocation"] = ("Ouvrir location", "فتح الكراء"),
+        ["EtatClient_Empty"] = ("Aucun matériel encore chez un client.", "لا توجد معدات عند أي عميل."),
+        ["EtatClient_DetailTitle"] = ("{0} — {1} encore sorti(s)", "{0} — {1} ما زالت خارجة"),
+        ["EtatClient_CardSummary"] = ("{0} encore · {1} location(s) · fin {2}", "{0} متبقية · {1} كراء · نهاية {2}"),
+        ["EtatClient_EncoreSuffix"] = ("encore", "متبقية"),
+        ["EtatClient_RetardOui"] = ("Oui", "نعم"),
+        ["EtatClient_RetardNon"] = ("—", "—"),
     };
 
     public static string Get(string key, string languageTag)

@@ -91,6 +91,7 @@ public static class DependencyInjection
         services.AddTransient<BLEditViewModel>();
         services.AddTransient<LocationListViewModel>();
         services.AddTransient<LocationEditViewModel>();
+        services.AddTransient<EtatClientViewModel>();
         services.AddTransient<BRListViewModel>();
         services.AddTransient<BREditViewModel>();
         services.AddTransient<BCListViewModel>();

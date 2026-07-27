@@ -68,6 +68,7 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty] private string _navBcc = string.Empty;
     [ObservableProperty] private string _navBl = string.Empty;
     [ObservableProperty] private string _navLocation = string.Empty;
+    [ObservableProperty] private string _navEtatClient = string.Empty;
     [ObservableProperty] private string _navFactures = string.Empty;
     [ObservableProperty] private string _navAvoirs = string.Empty;
     [ObservableProperty] private string _navAvoirFournisseur = string.Empty;
@@ -94,6 +95,7 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty] private bool _isNavBccActive;
     [ObservableProperty] private bool _isNavBlActive;
     [ObservableProperty] private bool _isNavLocationActive;
+    [ObservableProperty] private bool _isNavEtatClientActive;
     [ObservableProperty] private bool _isNavFacturesActive;
     [ObservableProperty] private bool _isNavAvoirsActive;
     [ObservableProperty] private bool _isNavAvoirFournisseurActive;
@@ -118,6 +120,7 @@ public partial class AppShellViewModel : BaseViewModel
         NavBcc = _locale.T("Nav_BCC");
         NavBl = _locale.T("Nav_BL");
         NavLocation = _locale.T("Nav_Location");
+        NavEtatClient = _locale.T("Nav_EtatClient");
         NavFactures = _locale.T("Nav_Factures");
         NavAvoirs = _locale.T("Nav_Avoirs");
         NavAvoirFournisseur = _locale.T("Nav_AvoirFournisseur");
@@ -191,6 +194,7 @@ public partial class AppShellViewModel : BaseViewModel
     public bool ShowNavBCC => _session.CanAccessDevis;
     public bool ShowNavBL => _session.CanAccessBL;
     public bool ShowNavLocation => _session.CanAccessLocation;
+    public bool ShowNavEtatClient => _session.CanAccessLocation;
     public bool ShowNavBR => _session.CanAccessBR;
     public bool ShowNavBC => _session.CanAccessBC;
     public bool ShowNavFactures => _session.CanAccessFacturation;
@@ -256,6 +260,14 @@ public partial class AppShellViewModel : BaseViewModel
     private void GoLocation()
     {
         var vm = _sp.GetRequiredService<LocationListViewModel>();
+        _workspace.Open(vm);
+        vm.LoadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private void GoEtatClient()
+    {
+        var vm = _sp.GetRequiredService<EtatClientViewModel>();
         _workspace.Open(vm);
         vm.LoadCommand.Execute(null);
     }
@@ -333,6 +345,7 @@ public partial class AppShellViewModel : BaseViewModel
         IsNavBccActive = p is BCVListViewModel or BCVEditViewModel;
         IsNavBlActive = p is BLListViewModel or BLEditViewModel;
         IsNavLocationActive = p is LocationListViewModel or LocationEditViewModel;
+        IsNavEtatClientActive = p is EtatClientViewModel;
         IsNavFacturesActive = p is FactureListViewModel or FactureEditViewModel;
         IsNavAvoirsActive = p is AvoirListViewModel or AvoirEditViewModel;
         IsNavAvoirFournisseurActive = p is AvoirFournisseurListViewModel or AvoirFournisseurEditViewModel;

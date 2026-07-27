@@ -50,6 +50,10 @@
                     Background="{Binding IsNavLocationActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
                     Foreground="{Binding IsNavLocationActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
                     BorderBrush="{Binding IsNavLocationActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
+            <Button Content="{Binding NavEtatClient}" Command="{Binding GoEtatClientCommand}" HorizontalAlignment="Stretch" IsVisible="{Binding ShowNavEtatClient}"
+                    Background="{Binding IsNavEtatClientActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
+                    Foreground="{Binding IsNavEtatClientActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
+                    BorderBrush="{Binding IsNavEtatClientActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
             <Button Content="{Binding NavFactures}" Command="{Binding GoFacturesCommand}" HorizontalAlignment="Stretch" IsVisible="{Binding ShowNavFactures}"
                     Background="{Binding IsNavFacturesActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
                     Foreground="{Binding IsNavFacturesActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
