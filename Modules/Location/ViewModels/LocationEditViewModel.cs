@@ -7,6 +7,8 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionCommerciale.Modules.Auth.Services;
+using GestionCommerciale.Modules.Livraison.Models;
+using GestionCommerciale.Modules.Livraison.ViewModels;
 using GestionCommerciale.Modules.Location.Models;
 using GestionCommerciale.Modules.Location.Services;
 using GestionCommerciale.Shared.Database;
@@ -65,6 +67,7 @@ public partial class LocationEditViewModel : BaseViewModel
 
     [ObservableProperty] private string _btnBack = string.Empty;
     [ObservableProperty] private string _btnSave = string.Empty;
+    [ObservableProperty] private string _btnToBl = string.Empty;
     [ObservableProperty] private string _menuDelete = string.Empty;
     [ObservableProperty] private string _lblClient = string.Empty;
     [ObservableProperty] private string _wmClientSearch = string.Empty;
@@ -137,6 +140,7 @@ public partial class LocationEditViewModel : BaseViewModel
     {
         BtnBack = _locale.T("Btn_Back");
         BtnSave = _locale.T("Btn_Save");
+        BtnToBl = _locale.T("Btn_ToBL");
         MenuDelete = _locale.T("Loc_MenuDelete");
         LblClient = _locale.T("Lbl_Client");
         WmClientSearch = _locale.T("Wm_SearchClient");
@@ -183,10 +187,16 @@ public partial class LocationEditViewModel : BaseViewModel
     [ObservableProperty] private decimal _caution;
     [ObservableProperty] private string _note = string.Empty;
     [ObservableProperty] private LocationLineRow? _selectedLine;
+    [ObservableProperty] private int? _bonLivraisonId;
+    [ObservableProperty] private string _blLabel = string.Empty;
+
+    public bool HasBlLabel => !string.IsNullOrEmpty(BlLabel);
 
     partial void OnLocationIdChanged(int? value) => RemoveLocationCommand.NotifyCanExecuteChanged();
 
     partial void OnStatutChanged(StatutLocation value) => NotifyStatutChip();
+
+    partial void OnBlLabelChanged(string value) => OnPropertyChanged(nameof(HasBlLabel));
 
     private void NotifyStatutChip()
     {
@@ -194,6 +204,28 @@ public partial class LocationEditViewModel : BaseViewModel
         StatutChipBackground = LocationStatutLabels.ChipBackground(Statut);
         StatutChipForeground = LocationStatutLabels.ChipForeground(Statut);
         StatutChipBorder = LocationStatutLabels.ChipBorder(Statut);
+    }
+
+    private void ClearBlLinkUi()
+    {
+        BonLivraisonId = null;
+        BlLabel = string.Empty;
+    }
+
+    private async Task RefreshBlLabelAsync(AppDbContext db, int? blId, CancellationToken cancellationToken)
+    {
+        BonLivraisonId = blId;
+        if (blId is not { } id)
+        {
+            BlLabel = string.Empty;
+            return;
+        }
+
+        var num = await db.BonsLivraison.AsNoTracking()
+            .Where(b => b.Id == id)
+            .Select(b => b.Numero)
+            .FirstOrDefaultAsync(cancellationToken);
+        BlLabel = string.IsNullOrEmpty(num) ? string.Empty : _locale.Tf("Loc_BlChip", num);
     }
 
     private bool CanRemoveLocation() => LocationId != null;
@@ -402,6 +434,7 @@ public partial class LocationEditViewModel : BaseViewModel
             Statut = StatutLocation.EnCours;
             Caution = 0;
             Note = string.Empty;
+            ClearBlLinkUi();
             Title = _locale.T("Loc_NewTitle");
             RefreshTotals();
             RefreshDerivedStatut();
@@ -418,6 +451,7 @@ public partial class LocationEditViewModel : BaseViewModel
         Statut = LocationStatutLabels.Normalize(b.Statut);
         Caution = b.Caution;
         Note = b.Note;
+        await RefreshBlLabelAsync(db, b.BonLivraisonId, cancellationToken);
         var produitIds = b.Lignes.Where(l => l.ProduitId is > 0).Select(l => l.ProduitId!.Value).Distinct().ToList();
         var refs = await db.Produits.AsNoTracking()
             .Where(p => produitIds.Contains(p.Id))
@@ -571,5 +605,94 @@ public partial class LocationEditViewModel : BaseViewModel
         var list = _sp.GetRequiredService<LocationListViewModel>();
         _workspace.Open(list);
         list.LoadCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private async Task ToBlAsync(CancellationToken cancellationToken)
+    {
+        if (LocationId is not { } locId)
+        {
+            await _dialog.ShowErrorAsync(_locale.T("Loc_Title"), _locale.T("Loc_ToBlNeedSave"), cancellationToken);
+            return;
+        }
+
+        if (ClientId == 0 || !Lignes.Any())
+        {
+            await _dialog.ShowErrorAsync(_locale.T("Loc_Title"), _locale.T("Loc_ErrClientLines"), cancellationToken);
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+            var loc = await db.Locations.Include(l => l.Lignes).FirstAsync(l => l.Id == locId, cancellationToken);
+
+            if (loc.BonLivraisonId is { } existingBlId)
+            {
+                var exists = await db.BonsLivraison.AsNoTracking().AnyAsync(b => b.Id == existingBlId, cancellationToken);
+                if (exists)
+                {
+                    OpenBl(existingBlId);
+                    return;
+                }
+
+                loc.BonLivraisonId = null;
+                await db.SaveChangesAsync(cancellationToken);
+            }
+
+            var blNumero = await _numbers.NextBLAsync(cancellationToken);
+            var bl = new BonLivraison
+            {
+                Numero = blNumero,
+                ClientId = loc.ClientId,
+                Date = DateTime.Today,
+                Note = string.IsNullOrWhiteSpace(loc.Note)
+                    ? _locale.Tf("Loc_BlNoteFrom", loc.Numero)
+                    : loc.Note,
+                CreatedByUserId = _session.UserId
+            };
+            foreach (var l in loc.Lignes.OrderBy(x => x.Id))
+            {
+                bl.Lignes.Add(new BonLivraisonLigne
+                {
+                    ProduitId = l.ProduitId,
+                    Designation = l.Designation,
+                    QuantiteCommandee = l.Quantite,
+                    QuantiteLivree = l.Quantite,
+                    PrixUnitaireHT = l.PrixUnitaireHT,
+                    Remise = l.Remise,
+                    TauxTVA = l.TauxTVA,
+                    CreatedByUserId = _session.UserId
+                });
+            }
+
+            db.BonsLivraison.Add(bl);
+            await db.SaveChangesAsync(cancellationToken);
+
+            loc.BonLivraisonId = bl.Id;
+            await db.SaveChangesAsync(cancellationToken);
+
+            // No stock sync on BL — Location owns stock.
+            BonLivraisonId = bl.Id;
+            BlLabel = _locale.Tf("Loc_BlChip", bl.Numero);
+            OpenBl(bl.Id);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Échec Vers BL depuis location", ex, "LocationEditViewModel.ToBlAsync");
+            await _dialog.ShowErrorAsync(_locale.T("Loc_Title"), ex.Message, cancellationToken);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OpenBl(int blId)
+    {
+        var vm = _sp.GetRequiredService<BLEditViewModel>();
+        vm.Load(blId);
+        _workspace.Open(vm);
     }
 }

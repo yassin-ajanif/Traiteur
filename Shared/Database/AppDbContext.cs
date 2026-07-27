@@ -263,7 +263,11 @@ public class AppDbContext : DbContext
             e.HasOne(l => l.Facture).WithMany()
                 .HasForeignKey(l => l.FactureId)
                 .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(l => l.BonLivraison).WithMany()
+                .HasForeignKey(l => l.BonLivraisonId)
+                .OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(l => l.FactureId);
+            e.HasIndex(l => l.BonLivraisonId);
             e.HasIndex(l => l.ClientId);
             e.HasIndex(l => l.Numero);
         });

@@ -11,6 +11,7 @@
       <StackPanel Orientation="Horizontal" Spacing="8">
         <Button Content="{Binding BtnBack}" Command="{Binding BackCommand}"/>
         <Button Content="{Binding BtnSave}" Command="{Binding SaveCommand}"/>
+        <Button Content="{Binding BtnToBl}" Command="{Binding ToBlCommand}"/>
       </StackPanel>
       <Border Background="{DynamicResource CourseraSurfaceBrush}" CornerRadius="8,8,0,0" Padding="10,8">
         <Border.ContextMenu>
@@ -18,7 +19,13 @@
             <MenuItem Header="{Binding MenuDelete}" Command="{Binding RemoveLocationCommand}"/>
           </ContextMenu>
         </Border.ContextMenu>
-        <TextBlock Text="{Binding Numero}" FontWeight="Bold"/>
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <TextBlock Text="{Binding Numero}" FontWeight="Bold"/>
+          <Border Padding="6,2" Background="#DBEAFE" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="4"
+                  IsVisible="{Binding HasBlLabel}" Cursor="Hand" Tapped="OnBlChipTapped">
+            <TextBlock Text="{Binding BlLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF"/>
+          </Border>
+        </StackPanel>
       </Border>
 
       <Grid ColumnDefinitions="Auto,*,24,Auto,Auto" VerticalAlignment="Center">

@@ -328,6 +328,9 @@ public static class UiTranslations
         ["Loc_Statut_EnCours"] = ("En cours", "جارٍ"),
         ["Loc_Statut_Partiel"] = ("Retour partiel", "إرجاع جزئي"),
         ["Loc_Statut_Retournee"] = ("Retournée", "مرجعة"),
+        ["Loc_ToBlNeedSave"] = ("Enregistrez la location avant de créer un bon de livraison.", "احفظ الكراء قبل إنشاء أمر التسليم."),
+        ["Loc_BlChip"] = ("BL {0}", "تسليم {0}"),
+        ["Loc_BlNoteFrom"] = ("Location {0}", "كراء {0}"),
     };
 
     public static string Get(string key, string languageTag)

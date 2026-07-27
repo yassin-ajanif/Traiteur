@@ -1,4 +1,5 @@
 using GestionCommerciale.Modules.Facturation.Models;
+using GestionCommerciale.Modules.Livraison.Models;
 using GestionCommerciale.Shared.Models;
 
 namespace GestionCommerciale.Modules.Location.Models;
@@ -17,5 +18,8 @@ public class Location : BaseEntity
     public string Note { get; set; } = string.Empty;
     public int? FactureId { get; set; }
     public Facture? Facture { get; set; }
+    /// <summary>Linked delivery note (Vers BL). Stock stays on Location.</summary>
+    public int? BonLivraisonId { get; set; }
+    public BonLivraison? BonLivraison { get; set; }
     public List<LocationLigne> Lignes { get; set; } = [];
 }
