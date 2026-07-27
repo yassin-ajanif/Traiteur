@@ -18,6 +18,7 @@ public interface ICurrentUserSession
     bool CanAccessStock { get; }
     bool CanAccessDevis { get; }
     bool CanAccessBL { get; }
+    bool CanAccessLocation { get; }
     bool CanAccessBR { get; }
     bool CanAccessBC { get; }
     bool CanAccessFacturation { get; }

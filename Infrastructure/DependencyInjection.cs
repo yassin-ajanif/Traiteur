@@ -10,6 +10,8 @@ using GestionCommerciale.Modules.FactureFournisseur.Services;
 using GestionCommerciale.Modules.FactureFournisseur.ViewModels;
 using GestionCommerciale.Modules.Livraison.Services;
 using GestionCommerciale.Modules.Livraison.ViewModels;
+using GestionCommerciale.Modules.Location.Services;
+using GestionCommerciale.Modules.Location.ViewModels;
 using GestionCommerciale.Modules.CommandeFournisseur.ViewModels;
 using GestionCommerciale.Modules.CommandeClient.ViewModels;
 using GestionCommerciale.Modules.Pos.Services;
@@ -52,6 +54,7 @@ public static class DependencyInjection
         services.AddSingleton<ICatalogSearchService, CatalogSearchService>();
         services.AddSingleton<IPosService, PosService>();
         services.AddSingleton<IBonLivraisonWorkflowService, BonLivraisonWorkflowService>();
+        services.AddSingleton<ILocationWorkflowService, LocationWorkflowService>();
         services.AddSingleton<IBonReceptionWorkflowService, BonReceptionWorkflowService>();
         services.AddSingleton<IFactureBlLinkService, FactureBlLinkService>();
         services.AddSingleton<IFactureBccLinkService, FactureBccLinkService>();
@@ -86,6 +89,8 @@ public static class DependencyInjection
         services.AddTransient<BCVEditViewModel>();
         services.AddTransient<BLListViewModel>();
         services.AddTransient<BLEditViewModel>();
+        services.AddTransient<LocationListViewModel>();
+        services.AddTransient<LocationEditViewModel>();
         services.AddTransient<BRListViewModel>();
         services.AddTransient<BREditViewModel>();
         services.AddTransient<BCListViewModel>();

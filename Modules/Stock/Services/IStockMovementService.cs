@@ -49,4 +49,16 @@ public interface IStockMovementService
         IEnumerable<(int ProduitId, decimal Quantite)> lines,
         int? createdByUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Net stock out for a location = Quantite - QuantiteRetournee (negative signed qty).
+    /// Pass empty lines (or all returned) to release stock.
+    /// </summary>
+    Task ResyncLocationStockAsync(
+        AppDbContext db,
+        int locationId,
+        string noteDetail,
+        IEnumerable<(int ProduitId, decimal QuantiteEncoreSortie)> lines,
+        int? createdByUserId,
+        CancellationToken cancellationToken = default);
 }

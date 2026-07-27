@@ -11,6 +11,7 @@ public sealed class StockMovementService : IStockMovementService
     public const string OrigineTypeBonReception = "BR";
     public const string OrigineTypeAvoir = "Avoir";
     public const string OrigineTypeAvoirFournisseur = "AvoirFournisseur";
+    public const string OrigineTypeLocation = "LOC";
     public const string OrigineTypeImport = "Import";
 
     private readonly ILocaleService _locale;
@@ -174,6 +175,31 @@ public sealed class StockMovementService : IStockMovementService
             db,
             OrigineTypeAvoirFournisseur,
             avoirFournisseurId,
+            noteDetail,
+            desired,
+            createdByUserId,
+            useModificationNoteOnEdit: true,
+            onPositiveEntreeDelta: null,
+            cancellationToken);
+    }
+
+    public Task ResyncLocationStockAsync(
+        AppDbContext db,
+        int locationId,
+        string noteDetail,
+        IEnumerable<(int ProduitId, decimal QuantiteEncoreSortie)> lines,
+        int? createdByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var desired = lines
+            .Where(l => l.ProduitId > 0 && l.QuantiteEncoreSortie > 0)
+            .GroupBy(l => l.ProduitId)
+            .ToDictionary(g => g.Key, g => -g.Sum(l => l.QuantiteEncoreSortie));
+
+        return SyncDocumentStockAsync(
+            db,
+            OrigineTypeLocation,
+            locationId,
             noteDetail,
             desired,
             createdByUserId,

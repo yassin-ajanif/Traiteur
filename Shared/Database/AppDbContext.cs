@@ -3,6 +3,7 @@ using GestionCommerciale.Modules.Services.Models;
 using GestionCommerciale.Modules.Devis.Models;
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.Livraison.Models;
+using GestionCommerciale.Modules.Location.Models;
 using GestionCommerciale.Modules.AvoirFournisseur.Models;
 using GestionCommerciale.Modules.CommandeFournisseur.Models;
 using GestionCommerciale.Modules.CommandeClient.Models;
@@ -47,6 +48,8 @@ public class AppDbContext : DbContext
     public DbSet<TypeCharge> TypesCharge => Set<TypeCharge>();
     public DbSet<Charge> Charges => Set<Charge>();
     public DbSet<Service> Services => Set<Service>();
+    public DbSet<Location> Locations => Set<Location>();
+    public DbSet<LocationLigne> LocationLignes => Set<LocationLigne>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -250,6 +253,25 @@ public class AppDbContext : DbContext
                 .HasForeignKey(l => l.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(l => l.ServiceId);
+        });
+
+        modelBuilder.Entity<Location>(e =>
+        {
+            e.ToTable("Locations");
+            e.Property(l => l.Statut).HasConversion<int>();
+            e.HasMany(l => l.Lignes).WithOne(x => x.Location).HasForeignKey(x => x.LocationId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(l => l.Facture).WithMany()
+                .HasForeignKey(l => l.FactureId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(l => l.FactureId);
+            e.HasIndex(l => l.ClientId);
+            e.HasIndex(l => l.Numero);
+        });
+
+        modelBuilder.Entity<LocationLigne>(e =>
+        {
+            e.ToTable("LocationLignes");
+            e.HasIndex(l => l.ProduitId);
         });
     }
 
