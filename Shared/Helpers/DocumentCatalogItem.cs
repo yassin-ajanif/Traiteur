@@ -19,6 +19,7 @@ public sealed class DocumentCatalogItem
     public string Unite { get; init; } = "U";
     public decimal PrixVenteHT { get; init; }
     public decimal PrixAchatHT { get; init; }
+    public decimal PrixLocationHT { get; init; }
     public decimal TauxTVA { get; init; }
     public byte[]? ImageData { get; init; }
 
@@ -34,6 +35,7 @@ public sealed class DocumentCatalogItem
         Unite = p.Unite,
         PrixVenteHT = p.PrixVenteHT,
         PrixAchatHT = p.PrixAchatHT,
+        PrixLocationHT = p.PrixLocationHT,
         TauxTVA = p.TauxTVA,
         ImageData = p.ImageData
     };

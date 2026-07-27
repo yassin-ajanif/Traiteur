@@ -33,7 +33,7 @@ public partial class LocationLineRow : ObservableObject
         ProduitId = p.Id;
         Reference = p.Reference;
         Designation = p.Designation;
-        PrixUnitaireHt = p.PrixVenteHT;
+        PrixUnitaireHt = p.PrixLocationHT > 0 ? p.PrixLocationHT : p.PrixVenteHT;
         TauxTva = p.TauxTVA;
         NotifyMontants();
     }
@@ -43,7 +43,7 @@ public partial class LocationLineRow : ObservableObject
         ProduitId = item.Id;
         Reference = item.Reference;
         Designation = item.Designation;
-        PrixUnitaireHt = item.PrixVenteHT;
+        PrixUnitaireHt = item.PrixLocationHT > 0 ? item.PrixLocationHT : item.PrixVenteHT;
         TauxTva = item.TauxTVA;
         NotifyMontants();
     }
