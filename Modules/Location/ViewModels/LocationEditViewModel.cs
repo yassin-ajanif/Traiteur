@@ -32,10 +32,8 @@ public partial class LocationEditViewModel : BaseViewModel
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
     private readonly IAppSettingsService _settings;
-    private readonly ICatalogSearchService _catalogSearch;
     private readonly ILocationWorkflowService _workflow;
-    private CancellationTokenSource? _productSearchCts;
-    private int _productSearchGeneration;
+    private readonly AddLineCatalogSearchCoordinator _addLineSearch;
 
     public LocationEditViewModel(
         IDbContextFactory<AppDbContext> dbFactory,
@@ -57,8 +55,8 @@ public partial class LocationEditViewModel : BaseViewModel
         _session = session;
         _locale = locale;
         _settings = settings;
-        _catalogSearch = catalogSearch;
         _workflow = workflow;
+        _addLineSearch = new AddLineCatalogSearchCoordinator(catalogSearch);
         _locale.CultureApplied += (_, _) => RefreshUi();
         Lignes.CollectionChanged += LignesOnCollectionChanged;
         Title = _locale.T("Loc_Title");
@@ -95,7 +93,7 @@ public partial class LocationEditViewModel : BaseViewModel
     public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
     public AutoCompleteFilterPredicate<object?> CatalogAutocompleteFilter => DocumentCatalogAutoComplete.ItemFilter;
 
-    public ObservableCollection<DocumentCatalogItem> AddLineSearchResults { get; } = [];
+    public ObservableCollection<DocumentCatalogItem> AddLineSearchResults => _addLineSearch.Results;
 
     [ObservableProperty] private decimal _totalHt;
     [ObservableProperty] private decimal _totalTva;
@@ -125,6 +123,9 @@ public partial class LocationEditViewModel : BaseViewModel
         if (e.PropertyName is nameof(LocationLineRow.ProduitId)
             && sender is LocationLineRow row && row.ProduitId is > 0)
             ConsolidateDuplicateProductLines();
+        if (e.PropertyName is nameof(LocationLineRow.ServiceId)
+            && sender is LocationLineRow serviceRow && serviceRow.ServiceId is > 0)
+            ConsolidateDuplicateServiceLines();
         if (e.PropertyName is nameof(LocationLineRow.Quantite) or nameof(LocationLineRow.QuantiteRetournee))
             RefreshDerivedStatut();
         RefreshTotals();
@@ -133,7 +134,7 @@ public partial class LocationEditViewModel : BaseViewModel
     partial void OnAddLineSearchTextChanged(string value)
     {
         if (_suppressAddLinePick) return;
-        QueueProductSearch(value);
+        _addLineSearch.QueueSearch(value);
     }
 
     private void RefreshUi()
@@ -265,10 +266,12 @@ public partial class LocationEditViewModel : BaseViewModel
     partial void OnAddLineCatalogPickChanged(object? value)
     {
         if (_suppressAddLinePick) return;
-        if (value is not DocumentCatalogItem item || item.Kind != DocumentCatalogKind.Product) return;
+        if (value is not DocumentCatalogItem item) return;
         _suppressAddLinePick = true;
         const decimal addQty = 1;
-        var existing = Lignes.FirstOrDefault(l => l.ProduitId == item.Id && item.Id != 0);
+        var existing = item.Kind == DocumentCatalogKind.Service
+            ? Lignes.FirstOrDefault(l => l.ServiceId == item.Id && item.Id != 0)
+            : Lignes.FirstOrDefault(l => l.ProduitId == item.Id && item.Id != 0);
         if (existing != null)
         {
             existing.Quantite += addQty;
@@ -283,65 +286,38 @@ public partial class LocationEditViewModel : BaseViewModel
             SelectedLine = row;
         }
 
-        Dispatcher.UIThread.Post(() =>
-        {
-            AddLineCatalogPick = null;
-            AddLineSearchText = string.Empty;
-            Dispatcher.UIThread.Post(() =>
+        _addLineSearch.ResetAfterPick(
+            () =>
             {
-                if (AddLineSearchResults.Count > 0)
-                    AddLineSearchResults.Clear();
-                _suppressAddLinePick = false;
-            }, DispatcherPriority.Background);
-        }, DispatcherPriority.Background);
+                AddLineCatalogPick = null;
+                AddLineSearchText = string.Empty;
+            },
+            () => _suppressAddLinePick = false);
         RefreshTotals();
-    }
-
-    private void QueueProductSearch(string? text)
-    {
-        _productSearchCts?.Cancel();
-        _productSearchCts?.Dispose();
-        _productSearchCts = new CancellationTokenSource();
-        _ = RunProductSearchAsync(text, Interlocked.Increment(ref _productSearchGeneration), _productSearchCts.Token);
-    }
-
-    private async Task RunProductSearchAsync(string? text, int generation, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await Task.Delay(100, cancellationToken);
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                if (generation == _productSearchGeneration)
-                {
-                    await Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        if (generation == _productSearchGeneration && AddLineSearchResults.Count > 0)
-                            AddLineSearchResults.Clear();
-                    });
-                }
-                return;
-            }
-
-            var products = await _catalogSearch.SearchProductsAsync(text, cancellationToken: cancellationToken);
-            if (generation != _productSearchGeneration || cancellationToken.IsCancellationRequested)
-                return;
-
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                if (generation != _productSearchGeneration || cancellationToken.IsCancellationRequested)
-                    return;
-                AddLineSearchResults.Clear();
-                foreach (var p in products)
-                    AddLineSearchResults.Add(DocumentCatalogItem.FromProduct(p));
-            });
-        }
-        catch (OperationCanceledException) { }
     }
 
     private void ConsolidateDuplicateProductLines()
     {
         foreach (var g in Lignes.Where(l => l.ProduitId is > 0).GroupBy(l => l.ProduitId).ToList())
+        {
+            if (g.Count() < 2) continue;
+            var ordered = g.OrderBy(l => Lignes.IndexOf(l)).ToList();
+            var keep = ordered[0];
+            var extraQty = ordered.Skip(1).Sum(l => l.Quantite);
+            foreach (var line in ordered.Skip(1))
+            {
+                if (ReferenceEquals(SelectedLine, line))
+                    SelectedLine = keep;
+                line.PropertyChanged -= LineOnPropertyChanged;
+                Lignes.Remove(line);
+            }
+            keep.Quantite += extraQty;
+        }
+    }
+
+    private void ConsolidateDuplicateServiceLines()
+    {
+        foreach (var g in Lignes.Where(l => l.ServiceId is > 0).GroupBy(l => l.ServiceId).ToList())
         {
             if (g.Count() < 2) continue;
             var ordered = g.OrderBy(l => Lignes.IndexOf(l)).ToList();
@@ -453,15 +429,28 @@ public partial class LocationEditViewModel : BaseViewModel
         Note = b.Note;
         await RefreshBlLabelAsync(db, b.BonLivraisonId, cancellationToken);
         var produitIds = b.Lignes.Where(l => l.ProduitId is > 0).Select(l => l.ProduitId!.Value).Distinct().ToList();
+        var serviceIds = b.Lignes.Where(l => l.ServiceId is > 0).Select(l => l.ServiceId!.Value).Distinct().ToList();
         var refs = await db.Produits.AsNoTracking()
             .Where(p => produitIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, p => p.Reference, cancellationToken);
+        var serviceRefs = await db.Services.AsNoTracking()
+            .Where(s => serviceIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => s.Reference, cancellationToken);
         foreach (var l in b.Lignes)
         {
+            string reference;
+            if (l.ServiceId is { } sid && serviceRefs.TryGetValue(sid, out var sr))
+                reference = sr;
+            else if (l.ProduitId is { } pid && refs.TryGetValue(pid, out var r))
+                reference = r;
+            else
+                reference = string.Empty;
+
             Lignes.Add(new LocationLineRow
             {
                 ProduitId = l.ProduitId,
-                Reference = l.ProduitId is { } pid && refs.TryGetValue(pid, out var r) ? r : string.Empty,
+                ServiceId = l.ServiceId,
+                Reference = reference,
                 Designation = l.Designation,
                 Quantite = l.Quantite,
                 QuantiteRetournee = l.QuantiteRetournee,
@@ -484,8 +473,7 @@ public partial class LocationEditViewModel : BaseViewModel
         AddLineCatalogPick = null;
         AddLineSearchText = string.Empty;
         _suppressAddLinePick = false;
-        if (AddLineSearchResults.Count > 0)
-            AddLineSearchResults.Clear();
+        _addLineSearch.Clear();
     }
 
     public void Load(int? id) => _ = LoadAsync(id, CancellationToken.None);
@@ -590,6 +578,7 @@ public partial class LocationEditViewModel : BaseViewModel
     private static LocationLigne ToEntityLine(LocationLineRow l) => new()
     {
         ProduitId = l.ProduitId,
+        ServiceId = l.ServiceId,
         Designation = l.Designation,
         Quantite = l.Quantite,
         QuantiteRetournee = l.QuantiteRetournee,
@@ -657,6 +646,7 @@ public partial class LocationEditViewModel : BaseViewModel
                 bl.Lignes.Add(new BonLivraisonLigne
                 {
                     ProduitId = l.ProduitId,
+                    ServiceId = l.ServiceId,
                     Designation = l.Designation,
                     QuantiteCommandee = l.Quantite,
                     QuantiteLivree = l.Quantite,

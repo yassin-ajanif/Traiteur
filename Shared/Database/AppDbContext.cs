@@ -276,6 +276,10 @@ public class AppDbContext : DbContext
         {
             e.ToTable("LocationLignes");
             e.HasIndex(l => l.ProduitId);
+            e.HasOne<Service>().WithMany()
+                .HasForeignKey(l => l.ServiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(l => l.ServiceId);
         });
     }
 

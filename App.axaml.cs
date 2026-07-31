@@ -59,6 +59,7 @@ public partial class App : Application
                 EnsureSocieteMentionsLegalesColumn(db);
                 EnsureFactureEstPayeeColumn(db);
                 EnsureTrialLicenseColumns(db);
+                EnsureLocationLigneServiceIdColumn(db);
                 DbSeeder.Seed(db);
             }
             catch (SqliteException ex) when (
@@ -133,6 +134,47 @@ public partial class App : Application
         root.SetRoot(loggedIn
             ? Services.GetRequiredService<AppShellViewModel>()
             : Services.GetRequiredService<LoginViewModel>());
+    }
+
+    /// <summary>Ensures LocationLignes.ServiceId exists so location lines can reference services.</summary>
+    private static void EnsureLocationLigneServiceIdColumn(AppDbContext db)
+    {
+        var conn = db.Database.GetDbConnection();
+        var wasClosed = conn.State != ConnectionState.Open;
+        if (wasClosed) conn.Open();
+        try
+        {
+            using var tableCheck = conn.CreateCommand();
+            tableCheck.CommandText =
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='LocationLignes';";
+            if (Convert.ToInt64(tableCheck.ExecuteScalar() ?? 0L) == 0) return;
+
+            using var colCheck = conn.CreateCommand();
+            colCheck.CommandText =
+                "SELECT COUNT(*) FROM pragma_table_info('LocationLignes') WHERE name = 'ServiceId';";
+            if (Convert.ToInt64(colCheck.ExecuteScalar() ?? 0L) > 0) return;
+
+            using var alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE LocationLignes ADD COLUMN ServiceId INTEGER NULL;";
+            alter.ExecuteNonQuery();
+
+            try
+            {
+                using var idx = conn.CreateCommand();
+                idx.CommandText =
+                    "CREATE INDEX IF NOT EXISTS IX_LocationLignes_ServiceId ON LocationLignes (ServiceId);";
+                idx.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                AppLog.Error("Failed to create LocationLignes.ServiceId index", ex, "App.EnsureLocationLigneServiceIdColumn");
+            }
+        }
+        finally
+        {
+            if (wasClosed && conn.State == ConnectionState.Open)
+                conn.Close();
+        }
     }
 
     /// <summary>Ensures TrialStartedAt and LicenseKey columns exist on AppSettings for older DBs.</summary>

@@ -1087,6 +1087,9 @@ namespace GestionCommerciale.Shared.Database.Migrations
                     b.Property<decimal>("Remise")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("TauxTVA")
                         .HasColumnType("TEXT");
 
@@ -1098,6 +1101,8 @@ namespace GestionCommerciale.Shared.Database.Migrations
                     b.HasIndex("LocationId");
 
                     b.HasIndex("ProduitId");
+
+                    b.HasIndex("ServiceId");
 
                     b.ToTable("LocationLignes", (string)null);
                 });
@@ -1773,6 +1778,11 @@ namespace GestionCommerciale.Shared.Database.Migrations
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("GestionCommerciale.Modules.Services.Models.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Location");
                 });
