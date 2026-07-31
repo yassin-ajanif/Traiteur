@@ -19,70 +19,98 @@
             <MenuItem Header="{Binding MenuDelete}" Command="{Binding RemoveLocationCommand}"/>
           </ContextMenu>
         </Border.ContextMenu>
-        <StackPanel Orientation="Horizontal" Spacing="12">
-          <TextBlock Text="{Binding Numero}" FontWeight="Bold"/>
-          <Border Padding="6,2" Background="#DBEAFE" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="4"
-                  IsVisible="{Binding HasBlLabel}" Cursor="Hand" Tapped="OnBlChipTapped">
-            <TextBlock Text="{Binding BlLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF"/>
-          </Border>
-        </StackPanel>
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Numero}" FontWeight="Bold" VerticalAlignment="Center"/>
+            <Border Padding="6,2" Background="#DBEAFE" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="4"
+                    IsVisible="{Binding HasBlLabel}" Cursor="Hand" Tapped="OnBlChipTapped" VerticalAlignment="Center">
+              <TextBlock Text="{Binding BlLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF"/>
+            </Border>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" HorizontalAlignment="Right">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Text="{Binding LblStatut}" Opacity="0.7" VerticalAlignment="Center"/>
+              <Border Padding="10,4"
+                      CornerRadius="4"
+                      BorderThickness="1"
+                      Background="{Binding StatutChipBackground}"
+                      BorderBrush="{Binding StatutChipBorder}"
+                      VerticalAlignment="Center">
+                <TextBlock Text="{Binding StatutLabel}"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{Binding StatutChipForeground}"/>
+              </Border>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Text="{Binding LblCaution}" Opacity="0.7" VerticalAlignment="Center"/>
+              <NumericUpDown Value="{Binding Caution}" Minimum="0" FormatString="N2"
+                             MinWidth="110" MaxWidth="130" VerticalAlignment="Center"/>
+            </StackPanel>
+          </StackPanel>
+        </Grid>
       </Border>
 
-      <Grid ColumnDefinitions="Auto,*,24,Auto,Auto" VerticalAlignment="Center">
-        <TextBlock Grid.Column="0" Text="{Binding LblClient}" VerticalAlignment="Center" Opacity="0.7" Margin="0,0,10,0"/>
-        <AutoCompleteBox Grid.Column="1"
-                         MinWidth="200" MaxWidth="420"
-                         MinimumPrefixLength="1" MaxDropDownHeight="320"
-                         Watermark="{Binding WmClientSearch}"
-                         ItemsSource="{Binding Clients}"
-                         ItemFilter="{Binding PartyAutocompleteFilter}"
-                         SelectedItem="{Binding SelectedClient, Mode=TwoWay}"
-                         VerticalAlignment="Center">
-          <AutoCompleteBox.ValueMemberBinding>
-            <Binding Path="Nom"/>
-          </AutoCompleteBox.ValueMemberBinding>
-          <AutoCompleteBox.ItemTemplate>
-            <DataTemplate DataType="m:Tiers">
-              <TextBlock Text="{Binding Nom}"/>
-            </DataTemplate>
-          </AutoCompleteBox.ItemTemplate>
-        </AutoCompleteBox>
-        <TextBlock Grid.Column="3" Text="{Binding LblDate}" VerticalAlignment="Center" Opacity="0.7" Margin="0,0,10,0"/>
-        <DatePicker Grid.Column="4" SelectedDate="{Binding Date}" VerticalAlignment="Center"/>
-      </Grid>
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,24,0">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <TextBlock Text="{Binding LblClient}" VerticalAlignment="Center" Opacity="0.7"/>
+            <AutoCompleteBox Width="260"
+                             MinimumPrefixLength="1" MaxDropDownHeight="320"
+                             Watermark="{Binding WmClientSearch}"
+                             ItemsSource="{Binding Clients}"
+                             ItemFilter="{Binding PartyAutocompleteFilter}"
+                             SelectedItem="{Binding SelectedClient, Mode=TwoWay}"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Left">
+              <AutoCompleteBox.ValueMemberBinding>
+                <Binding Path="Nom"/>
+              </AutoCompleteBox.ValueMemberBinding>
+              <AutoCompleteBox.ItemTemplate>
+                <DataTemplate DataType="m:Tiers">
+                  <TextBlock Text="{Binding Nom}"/>
+                </DataTemplate>
+              </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="24">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <TextBlock Text="{Binding LblDateDebut}" Opacity="0.7" VerticalAlignment="Center"/>
+              <CalendarDatePicker SelectedDate="{Binding DateDebut}"
+                                  SelectedDateFormat="Custom"
+                                  CustomDateFormatString="dd/MM/yyyy"
+                                  Watermark="jj/mm/aaaa"
+                                  VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <TextBlock Text="{Binding LblDateFin}" Opacity="0.7" VerticalAlignment="Center"/>
+              <CalendarDatePicker SelectedDate="{Binding DateFinPrevue}"
+                                  SelectedDateFormat="Custom"
+                                  CustomDateFormatString="dd/MM/yyyy"
+                                  Watermark="jj/mm/aaaa"
+                                  VerticalAlignment="Center"/>
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
 
-      <Grid ColumnDefinitions="Auto,24,Auto,24,Auto" VerticalAlignment="Top">
-        <StackPanel Grid.Column="0" Spacing="4">
-          <TextBlock Text="{Binding LblDateDebut}" Opacity="0.7"/>
-          <DatePicker SelectedDate="{Binding DateDebut}"/>
+        <StackPanel Grid.Column="1" Spacing="10" HorizontalAlignment="Right">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Right">
+            <TextBlock Text="{Binding LblDate}" Opacity="0.7" VerticalAlignment="Center"/>
+            <CalendarDatePicker SelectedDate="{Binding Date}"
+                                SelectedDateFormat="Custom"
+                                CustomDateFormatString="dd/MM/yyyy"
+                                Watermark="jj/mm/aaaa"
+                                VerticalAlignment="Center"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Right">
+            <TextBlock Text="{Binding LblDateRetour}" Opacity="0.7" VerticalAlignment="Center"/>
+            <CalendarDatePicker SelectedDate="{Binding DateRetourEffective}"
+                                SelectedDateFormat="Custom"
+                                CustomDateFormatString="dd/MM/yyyy"
+                                Watermark="jj/mm/aaaa"
+                                VerticalAlignment="Center"/>
+          </StackPanel>
         </StackPanel>
-        <StackPanel Grid.Column="2" Spacing="4">
-          <TextBlock Text="{Binding LblDateFin}" Opacity="0.7"/>
-          <DatePicker SelectedDate="{Binding DateFinPrevue}"/>
-        </StackPanel>
-        <StackPanel Grid.Column="4" Spacing="4">
-          <TextBlock Text="{Binding LblDateRetour}" Opacity="0.7"/>
-          <DatePicker SelectedDate="{Binding DateRetourEffective}"/>
-        </StackPanel>
-      </Grid>
-
-      <Grid ColumnDefinitions="Auto,Auto,24,Auto,140" VerticalAlignment="Center">
-        <TextBlock Grid.Column="0" Text="{Binding LblStatut}" VerticalAlignment="Center" Opacity="0.7" Margin="0,0,10,0"/>
-        <Border Grid.Column="1"
-                Padding="10,4"
-                CornerRadius="4"
-                BorderThickness="1"
-                Background="{Binding StatutChipBackground}"
-                BorderBrush="{Binding StatutChipBorder}"
-                VerticalAlignment="Center">
-          <TextBlock Text="{Binding StatutLabel}"
-                     FontSize="12"
-                     FontWeight="SemiBold"
-                     Foreground="{Binding StatutChipForeground}"/>
-        </Border>
-        <TextBlock Grid.Column="3" Text="{Binding LblCaution}" VerticalAlignment="Center" Opacity="0.7" Margin="0,0,10,0"/>
-        <NumericUpDown Grid.Column="4" Value="{Binding Caution}" Minimum="0" FormatString="N2"
-                       VerticalAlignment="Center"/>
       </Grid>
 
       <StackPanel Orientation="Horizontal" Spacing="8">

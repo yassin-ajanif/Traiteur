@@ -53,13 +53,39 @@
     <Setter Property="Foreground" Value="{DynamicResource CourseraSubtleTextBrush}"/>
   </Style>
 
-  <Style Selector="TextBox, ComboBox, NumericUpDown">
+  <Style Selector="TextBox, ComboBox, NumericUpDown, AutoCompleteBox, CalendarDatePicker">
     <Setter Property="Background" Value="{DynamicResource CourseraSurfaceBrush}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource CourseraBorderBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="8"/>
     <Setter Property="Padding" Value="10,7"/>
     <Setter Property="MinHeight" Value="36"/>
+  </Style>
+
+  <Style Selector="AutoCompleteBox TextBox">
+    <Setter Property="Background" Value="{DynamicResource CourseraSurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource CourseraBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="10,7"/>
+    <Setter Property="MinHeight" Value="36"/>
+  </Style>
+
+  <!-- Keep calendar text field flat inside the styled CalendarDatePicker chrome -->
+  <Style Selector="CalendarDatePicker TextBox">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Padding" Value="0"/>
+  </Style>
+
+  <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource CourseraPrimaryBrush}"/>
+  </Style>
+  <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource CourseraPrimaryBrush}"/>
+  </Style>
+  <Style Selector="TextBox:focus-within /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource CourseraPrimaryBrush}"/>
   </Style>
 
   <Style Selector="NumericUpDown">
@@ -381,6 +407,11 @@
   <Style Selector="DatePicker ComboBox">
     <Setter Property="MinWidth" Value="44"/>
     <Setter Property="MaxWidth" Value="100"/>
+  </Style>
+  <Style Selector="CalendarDatePicker">
+    <Setter Property="HorizontalAlignment" Value="Left"/>
+    <Setter Property="MinWidth" Value="160"/>
+    <Setter Property="MaxWidth" Value="260"/>
   </Style>
 
   <!-- Reporting / dashboard cards -->

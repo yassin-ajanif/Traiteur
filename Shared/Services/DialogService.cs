@@ -349,8 +349,8 @@ public sealed class DialogService : IDialogService
         var w = new Window
         {
             Title = title,
-            MinWidth = 340,
-            MaxWidth = 480,
+            MinWidth = 360,
+            MaxWidth = 520,
             SizeToContent = SizeToContent.WidthAndHeight,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false
@@ -361,34 +361,44 @@ public sealed class DialogService : IDialogService
 
         var presets = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center };
 
-        var dpFrom = new DatePicker();
-        var dpTo = new DatePicker();
+        static CalendarDatePicker CreateCalendar() => new()
+        {
+            MinWidth = 200,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            SelectedDateFormat = CalendarDatePickerFormat.Custom,
+            CustomDateFormatString = "dd/MM/yyyy",
+            Watermark = "jj/mm/aaaa",
+            IsTodayHighlighted = true,
+        };
+
+        var dpFrom = CreateCalendar();
+        var dpTo = CreateCalendar();
 
         void SetRange(DateTime from, DateTime to)
         {
-            dpFrom.SelectedDate = new DateTimeOffset(from.Year, from.Month, from.Day, 0, 0, 0, TimeSpan.Zero);
-            dpTo.SelectedDate = new DateTimeOffset(to.Year, to.Month, to.Day, 0, 0, 0, TimeSpan.Zero);
+            dpFrom.SelectedDate = from.Date;
+            dpTo.SelectedDate = to.Date;
         }
 
         var btnToday = new Button { Content = "Aujourd'hui" };
-        btnToday.Click += (_, _) => SetRange(DateTime.Today, DateTime.Today);
+        btnToday.Click += (_, _) =>
+        {
+            var (from, to) = Helpers.DateRangePresets.GetRange(Helpers.DateRangePreset.Today);
+            SetRange(from, to);
+        };
 
         var btnThisWeek = new Button { Content = "Cette semaine" };
         btnThisWeek.Click += (_, _) =>
         {
-            var today = DateTime.Today;
-            var diff = ((int)today.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
-            var monday = today.AddDays(-diff);
-            SetRange(monday, monday.AddDays(6));
+            var (from, to) = Helpers.DateRangePresets.GetRange(Helpers.DateRangePreset.Week);
+            SetRange(from, to);
         };
 
         var btnThisMonth = new Button { Content = "Ce mois" };
         btnThisMonth.Click += (_, _) =>
         {
-            var today = DateTime.Today;
-            var first = new DateTime(today.Year, today.Month, 1);
-            var last = first.AddMonths(1).AddDays(-1);
-            SetRange(first, last);
+            var (from, to) = Helpers.DateRangePresets.GetRange(Helpers.DateRangePreset.Month);
+            SetRange(from, to);
         };
 
         presets.Children.Add(btnToday);
@@ -396,16 +406,14 @@ public sealed class DialogService : IDialogService
         presets.Children.Add(btnThisMonth);
         panel.Children.Add(presets);
 
-        var dateGrid = new StackPanel { Spacing = 8 };
+        var dateGrid = new StackPanel { Spacing = 10 };
         var fromRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         fromRow.Children.Add(new TextBlock { Text = "Du:", VerticalAlignment = VerticalAlignment.Center, MinWidth = 30 });
-        dpFrom.MinWidth = 180;
         fromRow.Children.Add(dpFrom);
         dateGrid.Children.Add(fromRow);
 
         var toRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         toRow.Children.Add(new TextBlock { Text = "Au:", VerticalAlignment = VerticalAlignment.Center, MinWidth = 30 });
-        dpTo.MinWidth = 180;
         toRow.Children.Add(dpTo);
         dateGrid.Children.Add(toRow);
         panel.Children.Add(dateGrid);
@@ -425,7 +433,11 @@ public sealed class DialogService : IDialogService
             if (!dpFrom.SelectedDate.HasValue && !dpTo.SelectedDate.HasValue)
                 result = (DateTime.MinValue, DateTime.MinValue);
             else if (dpFrom.SelectedDate.HasValue && dpTo.SelectedDate.HasValue)
-                result = (dpFrom.SelectedDate.Value.DateTime.Date, dpTo.SelectedDate.Value.DateTime.Date);
+            {
+                var from = dpFrom.SelectedDate.Value.Date;
+                var to = dpTo.SelectedDate.Value.Date;
+                result = from <= to ? (from, to) : (to, from);
+            }
             w.Close();
         };
         actions.Children.Add(btnClear);

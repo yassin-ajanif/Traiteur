@@ -175,10 +175,10 @@ public partial class LocationEditViewModel : BaseViewModel
     [ObservableProperty] private int _clientId;
     [ObservableProperty] private TiersEntity? _selectedClient;
     [ObservableProperty] private string _numero = string.Empty;
-    [ObservableProperty] private DateTimeOffset _date = new(DateTime.Today);
-    [ObservableProperty] private DateTimeOffset _dateDebut = new(DateTime.Today);
-    [ObservableProperty] private DateTimeOffset _dateFinPrevue = new(DateTime.Today.AddDays(1));
-    [ObservableProperty] private DateTimeOffset? _dateRetourEffective;
+    [ObservableProperty] private DateTime _date = DateTime.Today;
+    [ObservableProperty] private DateTime _dateDebut = DateTime.Today;
+    [ObservableProperty] private DateTime _dateFinPrevue = DateTime.Today.AddDays(1);
+    [ObservableProperty] private DateTime? _dateRetourEffective;
     [ObservableProperty] private StatutLocation _statut = StatutLocation.EnCours;
     [ObservableProperty] private string _statutLabel = string.Empty;
     [ObservableProperty] private IBrush _statutChipBackground = Brushes.Transparent;
@@ -387,7 +387,7 @@ public partial class LocationEditViewModel : BaseViewModel
             NotifyStatutChip();
 
         if (next == StatutLocation.Retournee && DateRetourEffective == null)
-            DateRetourEffective = new DateTimeOffset(DateTime.Today);
+            DateRetourEffective = DateTime.Today;
         else if (next != StatutLocation.Retournee)
             DateRetourEffective = null;
     }
@@ -427,9 +427,9 @@ public partial class LocationEditViewModel : BaseViewModel
         {
             Numero = "(brouillon)";
             ClientId = Clients.FirstOrDefault()?.Id ?? 0;
-            Date = new DateTimeOffset(DateTime.Today);
-            DateDebut = new DateTimeOffset(DateTime.Today);
-            DateFinPrevue = new DateTimeOffset(DateTime.Today.AddDays(1));
+            Date = DateTime.Today;
+            DateDebut = DateTime.Today;
+            DateFinPrevue = DateTime.Today.AddDays(1);
             DateRetourEffective = null;
             Statut = StatutLocation.EnCours;
             Caution = 0;
@@ -444,10 +444,10 @@ public partial class LocationEditViewModel : BaseViewModel
         var b = await db.Locations.Include(x => x.Lignes).FirstAsync(x => x.Id == id, cancellationToken);
         Numero = b.Numero;
         ClientId = b.ClientId;
-        Date = new DateTimeOffset(b.Date);
-        DateDebut = new DateTimeOffset(b.DateDebut);
-        DateFinPrevue = new DateTimeOffset(b.DateFinPrevue);
-        DateRetourEffective = b.DateRetourEffective is { } dr ? new DateTimeOffset(dr) : null;
+        Date = b.Date.Date;
+        DateDebut = b.DateDebut.Date;
+        DateFinPrevue = b.DateFinPrevue.Date;
+        DateRetourEffective = b.DateRetourEffective?.Date;
         Statut = LocationStatutLabels.Normalize(b.Statut);
         Caution = b.Caution;
         Note = b.Note;
@@ -534,10 +534,10 @@ public partial class LocationEditViewModel : BaseViewModel
                 {
                     Numero = num,
                     ClientId = ClientId,
-                    Date = Date.DateTime.Date,
-                    DateDebut = DateDebut.DateTime.Date,
-                    DateFinPrevue = DateFinPrevue.DateTime.Date,
-                    DateRetourEffective = DateRetourEffective?.DateTime.Date,
+                    Date = Date.Date,
+                    DateDebut = DateDebut.Date,
+                    DateFinPrevue = DateFinPrevue.Date,
+                    DateRetourEffective = DateRetourEffective?.Date,
                     Statut = Statut,
                     Caution = Caution,
                     Note = Note,
@@ -556,10 +556,10 @@ public partial class LocationEditViewModel : BaseViewModel
             {
                 entity = await db.Locations.Include(b => b.Lignes).FirstAsync(b => b.Id == LocationId, cancellationToken);
                 entity.ClientId = ClientId;
-                entity.Date = Date.DateTime.Date;
-                entity.DateDebut = DateDebut.DateTime.Date;
-                entity.DateFinPrevue = DateFinPrevue.DateTime.Date;
-                entity.DateRetourEffective = DateRetourEffective?.DateTime.Date;
+                entity.Date = Date.Date;
+                entity.DateDebut = DateDebut.Date;
+                entity.DateFinPrevue = DateFinPrevue.Date;
+                entity.DateRetourEffective = DateRetourEffective?.Date;
                 entity.Statut = Statut;
                 entity.Caution = Caution;
                 entity.Note = Note;
