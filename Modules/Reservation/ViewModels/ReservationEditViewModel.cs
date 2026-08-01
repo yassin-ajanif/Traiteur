@@ -93,6 +93,17 @@ public partial class ReservationEditViewModel : BaseViewModel
     [ObservableProperty] private string _lblDocColTva = string.Empty;
     [ObservableProperty] private string _lblDocColMontantHt = string.Empty;
     [ObservableProperty] private string _lblDocColMontantTtc = string.Empty;
+    [ObservableProperty] private string _lblRetoursSection = string.Empty;
+    [ObservableProperty] private string _lblRetourProduit = string.Empty;
+    [ObservableProperty] private string _lblRetourQte = string.Empty;
+    [ObservableProperty] private string _lblRetourNote = string.Empty;
+    [ObservableProperty] private string _btnAddRetour = string.Empty;
+    [ObservableProperty] private string _btnDeleteRetour = string.Empty;
+    [ObservableProperty] private string _wmRetourProduit = string.Empty;
+    [ObservableProperty] private string _lblHistColDate = string.Empty;
+    [ObservableProperty] private string _lblHistColProduit = string.Empty;
+    [ObservableProperty] private string _lblHistColQte = string.Empty;
+    [ObservableProperty] private string _lblHistColNote = string.Empty;
 
     public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
     public AutoCompleteFilterPredicate<object?> CatalogAutocompleteFilter => DocumentCatalogAutoComplete.ItemFilter;
@@ -116,8 +127,14 @@ public partial class ReservationEditViewModel : BaseViewModel
             foreach (ReservationProduitLineRow row in e.NewItems)
                 row.PropertyChanged += ProduitLineOnPropertyChanged;
         if (e.OldItems != null)
+        {
             foreach (ReservationProduitLineRow row in e.OldItems)
+            {
                 row.PropertyChanged -= ProduitLineOnPropertyChanged;
+                RemoveRetoursForLine(row);
+            }
+        }
+        RefreshRetourProduitOptions();
         RefreshTotals();
         RefreshDerivedStatut();
     }
@@ -139,7 +156,16 @@ public partial class ReservationEditViewModel : BaseViewModel
             && sender is ReservationProduitLineRow row && row.ProduitId is > 0)
             ConsolidateDuplicateProductLines();
         if (e.PropertyName is nameof(ReservationProduitLineRow.Quantite) or nameof(ReservationProduitLineRow.QuantiteRetournee))
+        {
             RefreshDerivedStatut();
+            RefreshRetourProduitOptions();
+        }
+        if ((e.PropertyName is nameof(ReservationProduitLineRow.Reference) or nameof(ReservationProduitLineRow.Designation))
+            && sender is ReservationProduitLineRow labelRow)
+        {
+            foreach (var r in Retours.Where(x => ReferenceEquals(x.Line, labelRow)))
+                r.NotifyProduitLabel();
+        }
         RefreshTotals();
     }
 
@@ -188,6 +214,17 @@ public partial class ReservationEditViewModel : BaseViewModel
         LblDocColTva = _locale.T("DocLine_ColTva");
         LblDocColMontantHt = _locale.T("DocLine_ColMontantHt");
         LblDocColMontantTtc = _locale.T("DocLine_ColMontantTtc");
+        LblRetoursSection = _locale.T("Res_SectionRetours");
+        LblRetourProduit = _locale.T("Res_LblRetourProduit");
+        LblRetourQte = _locale.T("Res_LblRetourQte");
+        LblRetourNote = _locale.T("Res_LblRetourNote");
+        BtnAddRetour = _locale.T("Res_BtnAddRetour");
+        BtnDeleteRetour = _locale.T("Res_BtnDeleteRetour");
+        WmRetourProduit = _locale.T("Res_WmRetourProduit");
+        LblHistColDate = _locale.T("Res_HistColDate");
+        LblHistColProduit = _locale.T("Res_HistColProduit");
+        LblHistColQte = _locale.T("Res_HistColQte");
+        LblHistColNote = _locale.T("Res_HistColNote");
         NotifyStatutChip();
         UpdateTotalLabels(TotalHt, TotalTva, TotalTtc);
     }
@@ -195,6 +232,8 @@ public partial class ReservationEditViewModel : BaseViewModel
     public ObservableCollection<TiersEntity> Clients { get; } = [];
     public ObservableCollection<ReservationProduitLineRow> ProduitLignes { get; } = [];
     public ObservableCollection<ReservationServiceLineRow> ServiceLignes { get; } = [];
+    public ObservableCollection<ReservationRetourRow> Retours { get; } = [];
+    public ObservableCollection<ReservationProduitLineRow> RetourProduitOptions { get; } = [];
 
     [ObservableProperty] private int? _reservationId;
     [ObservableProperty] private int _clientId;
@@ -215,6 +254,11 @@ public partial class ReservationEditViewModel : BaseViewModel
     [ObservableProperty] private ReservationServiceLineRow? _selectedServiceLine;
     [ObservableProperty] private int? _bonLivraisonId;
     [ObservableProperty] private string _blLabel = string.Empty;
+    [ObservableProperty] private DateTime _newRetourDate = DateTime.Today;
+    [ObservableProperty] private ReservationProduitLineRow? _newRetourProduit;
+    [ObservableProperty] private decimal _newRetourQuantite = 1;
+    [ObservableProperty] private string _newRetourNote = string.Empty;
+    [ObservableProperty] private ReservationRetourRow? _selectedRetour;
 
     public bool HasBlLabel => !string.IsNullOrEmpty(BlLabel);
 
@@ -352,10 +396,23 @@ public partial class ReservationEditViewModel : BaseViewModel
             {
                 if (ReferenceEquals(SelectedProduitLine, line))
                     SelectedProduitLine = keep;
+                foreach (var ret in Retours.Where(r => ReferenceEquals(r.Line, line)).ToList())
+                {
+                    // Re-bind history to the kept line before removal cascades delete returns.
+                    Retours.Remove(ret);
+                    Retours.Add(new ReservationRetourRow(keep)
+                    {
+                        DateRetour = ret.DateRetour,
+                        Quantite = ret.Quantite,
+                        Note = ret.Note
+                    });
+                }
                 line.PropertyChanged -= ProduitLineOnPropertyChanged;
                 ProduitLignes.Remove(line);
             }
             keep.Quantite += extraQty;
+            SyncQuantiteRetourneeFromHistory();
+            RefreshRetourProduitOptions();
         }
     }
 
@@ -432,8 +489,11 @@ public partial class ReservationEditViewModel : BaseViewModel
         ReservationId = id;
         ProduitLignes.Clear();
         ServiceLignes.Clear();
+        Retours.Clear();
         SelectedProduitLine = null;
         SelectedServiceLine = null;
+        SelectedRetour = null;
+        ResetRetourForm();
         ResetAddProductSearch();
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var clients = await db.Tiers.AsNoTracking()
@@ -465,6 +525,7 @@ public partial class ReservationEditViewModel : BaseViewModel
 
         var b = await db.Reservations
             .Include(x => x.ProduitLignes)
+                .ThenInclude(l => l.Retours)
             .Include(x => x.ServiceLignes)
             .FirstAsync(x => x.Id == id, cancellationToken);
         Numero = b.Numero;
@@ -490,7 +551,7 @@ public partial class ReservationEditViewModel : BaseViewModel
         foreach (var l in b.ProduitLignes)
         {
             var reference = l.ProduitId is { } pid && refs.TryGetValue(pid, out var r) ? r : string.Empty;
-            ProduitLignes.Add(new ReservationProduitLineRow
+            var row = new ReservationProduitLineRow
             {
                 ProduitId = l.ProduitId,
                 Reference = reference,
@@ -501,8 +562,20 @@ public partial class ReservationEditViewModel : BaseViewModel
                 Remise = l.Remise,
                 TauxTva = l.TauxTVA,
                 Note = l.Note
-            });
+            };
+            ProduitLignes.Add(row);
+            foreach (var ret in l.Retours.OrderBy(x => x.DateRetour).ThenBy(x => x.Id))
+            {
+                Retours.Add(new ReservationRetourRow(row)
+                {
+                    DateRetour = ret.DateRetour.Date,
+                    Quantite = ret.Quantite,
+                    Note = ret.Note
+                });
+            }
         }
+
+        SyncQuantiteRetourneeFromHistory();
 
         foreach (var l in b.ServiceLignes)
         {
@@ -524,6 +597,7 @@ public partial class ReservationEditViewModel : BaseViewModel
         RefreshTotals();
         RefreshDerivedStatut();
         ResetAddProductSearch();
+        RefreshRetourProduitOptions();
     }
 
     private void ResetAddProductSearch()
@@ -578,6 +652,8 @@ public partial class ReservationEditViewModel : BaseViewModel
             await _dialog.ShowErrorAsync(_locale.T("Loc_Title"), _locale.T("Loc_ErrClientLines"), cancellationToken);
             return;
         }
+
+        SyncQuantiteRetourneeFromHistory();
 
         if (ProduitLignes.Any(l => l.QuantiteRetournee > l.Quantite))
         {
@@ -658,17 +734,32 @@ public partial class ReservationEditViewModel : BaseViewModel
         }
     }
 
-    private static ReservationProduitLigne ToProduitEntityLine(ReservationProduitLineRow l) => new()
+    private ReservationProduitLigne ToProduitEntityLine(ReservationProduitLineRow l)
     {
-        ProduitId = l.ProduitId,
-        Designation = l.Designation,
-        Quantite = l.Quantite,
-        QuantiteRetournee = l.QuantiteRetournee,
-        PrixUnitaireHT = l.PrixUnitaireHt,
-        Remise = l.Remise,
-        TauxTVA = l.TauxTva,
-        Note = l.Note
-    };
+        var entity = new ReservationProduitLigne
+        {
+            ProduitId = l.ProduitId,
+            Designation = l.Designation,
+            Quantite = l.Quantite,
+            QuantiteRetournee = l.QuantiteRetournee,
+            PrixUnitaireHT = l.PrixUnitaireHt,
+            Remise = l.Remise,
+            TauxTVA = l.TauxTva,
+            Note = l.Note,
+            CreatedByUserId = _session.UserId
+        };
+        foreach (var r in Retours.Where(x => ReferenceEquals(x.Line, l)))
+        {
+            entity.Retours.Add(new ReservationProduitRetour
+            {
+                DateRetour = r.DateRetour.Date,
+                Quantite = r.Quantite,
+                Note = r.Note ?? string.Empty,
+                CreatedByUserId = _session.UserId
+            });
+        }
+        return entity;
+    }
 
     private static ReservationServiceLigne ToServiceEntityLine(ReservationServiceLineRow l) => new()
     {
@@ -680,6 +771,86 @@ public partial class ReservationEditViewModel : BaseViewModel
         TauxTVA = l.TauxTva,
         Note = l.Note
     };
+
+    private void SyncQuantiteRetourneeFromHistory()
+    {
+        foreach (var line in ProduitLignes)
+            line.QuantiteRetournee = Retours.Where(r => ReferenceEquals(r.Line, line)).Sum(r => r.Quantite);
+    }
+
+    private void RemoveRetoursForLine(ReservationProduitLineRow line)
+    {
+        for (var i = Retours.Count - 1; i >= 0; i--)
+        {
+            if (ReferenceEquals(Retours[i].Line, line))
+                Retours.RemoveAt(i);
+        }
+        if (ReferenceEquals(NewRetourProduit, line))
+            NewRetourProduit = null;
+        SyncQuantiteRetourneeFromHistory();
+    }
+
+    private void RefreshRetourProduitOptions()
+    {
+        var selected = NewRetourProduit;
+        RetourProduitOptions.Clear();
+        foreach (var line in ProduitLignes.Where(l => l.QuantiteEncoreSortie > 0))
+            RetourProduitOptions.Add(line);
+        if (selected != null && RetourProduitOptions.Contains(selected))
+            NewRetourProduit = selected;
+        else
+            NewRetourProduit = RetourProduitOptions.FirstOrDefault();
+    }
+
+    private void ResetRetourForm()
+    {
+        NewRetourDate = DateTime.Today;
+        NewRetourQuantite = 1;
+        NewRetourNote = string.Empty;
+        RefreshRetourProduitOptions();
+    }
+
+    [RelayCommand]
+    private async Task AddRetourAsync(CancellationToken cancellationToken)
+    {
+        var line = NewRetourProduit;
+        if (line == null || !ProduitLignes.Contains(line) || line.QuantiteEncoreSortie <= 0)
+        {
+            await _dialog.ShowErrorAsync(_locale.T("Loc_Title"), _locale.T("Res_ErrRetourNoLine"), cancellationToken);
+            return;
+        }
+
+        if (NewRetourQuantite <= 0 || NewRetourQuantite > line.QuantiteEncoreSortie)
+        {
+            await _dialog.ShowErrorAsync(_locale.T("Loc_Title"), _locale.T("Res_ErrRetourQte"), cancellationToken);
+            return;
+        }
+
+        Retours.Add(new ReservationRetourRow(line)
+        {
+            DateRetour = NewRetourDate.Date,
+            Quantite = NewRetourQuantite,
+            Note = NewRetourNote?.Trim() ?? string.Empty
+        });
+        SyncQuantiteRetourneeFromHistory();
+        RefreshDerivedStatut();
+        RefreshRetourProduitOptions();
+        NewRetourQuantite = 1;
+        NewRetourNote = string.Empty;
+    }
+
+    [RelayCommand]
+    private void DeleteRetour(ReservationRetourRow? row)
+    {
+        row ??= SelectedRetour;
+        if (row == null) return;
+        Retours.Remove(row);
+        if (ReferenceEquals(SelectedRetour, row))
+            SelectedRetour = null;
+        SyncQuantiteRetourneeFromHistory();
+        RefreshDerivedStatut();
+        RefreshRetourProduitOptions();
+    }
 
     [RelayCommand]
     private void Back()

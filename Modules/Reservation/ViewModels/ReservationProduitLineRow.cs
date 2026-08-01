@@ -26,6 +26,17 @@ public partial class ReservationProduitLineRow : ObservableObject
 
     public decimal QuantiteEncoreSortie => Math.Max(0, Quantite - QuantiteRetournee);
 
+    public string RetourOptionLabel
+    {
+        get
+        {
+            var name = !string.IsNullOrWhiteSpace(Reference) && !string.IsNullOrWhiteSpace(Designation)
+                ? $"{Reference} — {Designation}"
+                : (string.IsNullOrWhiteSpace(Designation) ? Reference : Designation);
+            return $"{name} (encore {QuantiteEncoreSortie:N2})";
+        }
+    }
+
     public decimal MontantHt => DocumentTotalsHelper.LigneHT(Quantite, PrixUnitaireHt, Remise);
 
     public decimal MontantTtc => MontantHt * (1 + TauxTva / 100m);
@@ -45,6 +56,8 @@ public partial class ReservationProduitLineRow : ObservableObject
     partial void OnPrixUnitaireHtChanged(decimal value) => NotifyMontants();
     partial void OnRemiseChanged(decimal value) => NotifyMontants();
     partial void OnTauxTvaChanged(decimal value) => NotifyMontants();
+    partial void OnReferenceChanged(string value) => OnPropertyChanged(nameof(RetourOptionLabel));
+    partial void OnDesignationChanged(string value) => OnPropertyChanged(nameof(RetourOptionLabel));
 
     public void ApplyCatalogProduct(Produit p)
     {
@@ -71,6 +84,7 @@ public partial class ReservationProduitLineRow : ObservableObject
         OnPropertyChanged(nameof(MontantHt));
         OnPropertyChanged(nameof(MontantTtc));
         OnPropertyChanged(nameof(QuantiteEncoreSortie));
+        OnPropertyChanged(nameof(RetourOptionLabel));
         OnPropertyChanged(nameof(IsRetourComplet));
         OnPropertyChanged(nameof(QteRetourBackground));
         OnPropertyChanged(nameof(QteRetourBorder));

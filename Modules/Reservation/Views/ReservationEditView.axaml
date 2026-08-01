@@ -170,11 +170,15 @@
                                    Background="{Binding QteLoueeBackground}"
                                    BorderBrush="{Binding QteLoueeBorder}"
                                    Foreground="{Binding QteLoueeForeground}"/>
-                    <NumericUpDown Grid.Column="3" Value="{Binding QuantiteRetournee}" Minimum="0" FormatString="N2"
-                                   VerticalAlignment="Center" Margin="0,0,8,0"
-                                   Background="{Binding QteRetourBackground}"
-                                   BorderBrush="{Binding QteRetourBorder}"
-                                   Foreground="{Binding QteRetourForeground}"/>
+                    <Border Grid.Column="3" Padding="4,2" Margin="0,0,8,0" CornerRadius="4"
+                            Background="{Binding QteRetourBackground}"
+                            BorderBrush="{Binding QteRetourBorder}" BorderThickness="1"
+                            VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                      <TextBlock Text="{Binding QuantiteRetournee, StringFormat={}{0:N2}}"
+                                 HorizontalAlignment="Right"
+                                 FontWeight="SemiBold"
+                                 Foreground="{Binding QteRetourForeground}"/>
+                    </Border>
                     <NumericUpDown Grid.Column="4" Value="{Binding PrixUnitaireHt}" Minimum="0" FormatString="N2"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <NumericUpDown Grid.Column="5" Value="{Binding Remise}" Minimum="0" Maximum="100" FormatString="N2"
@@ -192,6 +196,77 @@
           </ListBox>
         </Grid>
       </ScrollViewer>
+
+      <TextBlock Text="{Binding LblRetoursSection}" FontWeight="SemiBold" Margin="0,4,0,0"/>
+      <Border BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8"
+              Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="10">
+        <StackPanel Spacing="8">
+          <WrapPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,8">
+              <TextBlock Text="{Binding LblDate}" VerticalAlignment="Center" Opacity="0.75"/>
+              <CalendarDatePicker SelectedDate="{Binding NewRetourDate}"
+                                  SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy"
+                                  MinWidth="130"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,8">
+              <TextBlock Text="{Binding LblRetourProduit}" VerticalAlignment="Center" Opacity="0.75"/>
+              <ComboBox ItemsSource="{Binding RetourProduitOptions}"
+                        SelectedItem="{Binding NewRetourProduit}"
+                        MinWidth="260"
+                        PlaceholderText="{Binding WmRetourProduit}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate DataType="vm:ReservationProduitLineRow">
+                    <TextBlock Text="{Binding RetourOptionLabel}"/>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,8">
+              <TextBlock Text="{Binding LblRetourQte}" VerticalAlignment="Center" Opacity="0.75"/>
+              <NumericUpDown Value="{Binding NewRetourQuantite}" Minimum="0" FormatString="N2" MinWidth="90"/>
+              <Button Content="{Binding BtnAddRetour}" Command="{Binding AddRetourCommand}"/>
+            </StackPanel>
+          </WrapPanel>
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Text="{Binding LblRetourNote}" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,8,0"/>
+            <TextBox Grid.Column="1" Text="{Binding NewRetourNote}"/>
+          </Grid>
+
+          <Grid RowDefinitions="Auto,*" MinHeight="100">
+            <Border Grid.Row="0" BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8,8,0,0"
+                    Background="{DynamicResource CourseraSurfaceBrush}" Padding="8,6">
+              <Grid ColumnDefinitions="110,*,80,*,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding LblHistColDate}" FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="1" Text="{Binding LblHistColProduit}" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding LblHistColQte}" FontWeight="SemiBold" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="3" Text="{Binding LblHistColNote}" FontWeight="SemiBold" Margin="0,0,8,0"/>
+              </Grid>
+            </Border>
+            <ListBox Grid.Row="1" ItemsSource="{Binding Retours}" SelectedItem="{Binding SelectedRetour}"
+                     MinHeight="80" MaxHeight="200"
+                     BorderThickness="1" BorderBrush="{DynamicResource CourseraBorderBrush}" CornerRadius="0,0,8,8"
+                     Background="{DynamicResource CourseraSurfaceBrush}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:ReservationRetourRow">
+                  <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="110,*,80,*,Auto" MinHeight="28">
+                      <TextBlock Grid.Column="0" Text="{Binding DateRetour, StringFormat={}{0:dd/MM/yyyy}}" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="1" Text="{Binding ProduitLabel}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+                      <TextBlock Grid.Column="2" Text="{Binding Quantite, StringFormat={}{0:N2}}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+                      <TextBlock Grid.Column="3" Text="{Binding Note}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" Opacity="0.8"/>
+                      <Button Grid.Column="4"
+                              Content="{Binding #ThisView.((vm:ReservationEditViewModel)DataContext).BtnDeleteRetour}"
+                              Command="{Binding #ThisView.((vm:ReservationEditViewModel)DataContext).DeleteRetourCommand}"
+                              CommandParameter="{Binding}"
+                              Padding="8,2" VerticalAlignment="Center"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </StackPanel>
+      </Border>
 
       <TextBlock Text="{Binding LblServicesSection}" FontWeight="SemiBold" Margin="0,8,0,0"/>
 

@@ -50,6 +50,7 @@ public class AppDbContext : DbContext
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<ReservationProduitLigne> ReservationProduitLignes => Set<ReservationProduitLigne>();
+    public DbSet<ReservationProduitRetour> ReservationProduitRetours => Set<ReservationProduitRetour>();
     public DbSet<ReservationServiceLigne> ReservationServiceLignes => Set<ReservationServiceLigne>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -281,8 +282,18 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ReservationProduitLigne>(e =>
         {
             e.ToTable("ReservationProduitLignes");
+            e.HasMany(l => l.Retours).WithOne(r => r.ReservationProduitLigne)
+                .HasForeignKey(r => r.ReservationProduitLigneId)
+                .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(l => l.ProduitId);
             e.HasIndex(l => l.ReservationId);
+        });
+
+        modelBuilder.Entity<ReservationProduitRetour>(e =>
+        {
+            e.ToTable("ReservationProduitRetours");
+            e.HasIndex(r => r.ReservationProduitLigneId);
+            e.HasIndex(r => r.DateRetour);
         });
 
         modelBuilder.Entity<ReservationServiceLigne>(e =>
