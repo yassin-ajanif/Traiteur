@@ -1,13 +1,12 @@
 using GestionCommerciale.Shared.Models;
 
-namespace GestionCommerciale.Modules.Location.Models;
+namespace GestionCommerciale.Modules.Reservation.Models;
 
-public class LocationLigne : BaseEntity
+public class ReservationProduitLigne : BaseEntity
 {
-    public int LocationId { get; set; }
-    public Location? Location { get; set; }
+    public int ReservationId { get; set; }
+    public Reservation? Reservation { get; set; }
     public int? ProduitId { get; set; }
-    public int? ServiceId { get; set; }
     public string Designation { get; set; } = string.Empty;
     public decimal Quantite { get; set; }
     public decimal QuantiteRetournee { get; set; }

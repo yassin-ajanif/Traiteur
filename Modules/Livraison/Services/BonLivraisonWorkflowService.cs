@@ -17,7 +17,7 @@ public sealed class BonLivraisonWorkflowService : IBonLivraisonWorkflowService
 
     public async Task ValiderAsync(int bonLivraisonId, int? userId, CancellationToken cancellationToken = default)
     {
-        // Stock for physical exits is owned by Location (rental), not BL.
+        // Stock for physical exits is owned by Reservation (rental), not BL.
         // Clear any legacy BL stock movements so saving a BL never deducts qty.
         await ClearBlStockAsync(bonLivraisonId, userId, cancellationToken);
     }

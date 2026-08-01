@@ -5,7 +5,7 @@ using GestionCommerciale.Modules.Devis.Models;
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.FactureFournisseur.Models;
 using GestionCommerciale.Modules.Livraison.Models;
-using GestionCommerciale.Modules.Location.Models;
+using GestionCommerciale.Modules.Reservation.Models;
 using GestionCommerciale.Modules.Reception.Models;
 
 namespace GestionCommerciale.Shared.Helpers;
@@ -193,10 +193,20 @@ public static class DocumentTotalsHelper
         return (ht, tva, ht + tva);
     }
 
-    public static (decimal ht, decimal tva, decimal ttc) LocationTotals(IEnumerable<LocationLigne> lignes, decimal remiseGlobalePct = 0)
+    public static (decimal ht, decimal tva, decimal ttc) ReservationTotals(
+        IEnumerable<ReservationProduitLigne> produitLignes,
+        IEnumerable<ReservationServiceLigne> serviceLignes,
+        decimal remiseGlobalePct = 0)
     {
         decimal ht = 0, tva = 0;
-        foreach (var l in lignes)
+        foreach (var l in produitLignes)
+        {
+            var lht = LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
+            ht += lht;
+            tva += lht * (l.TauxTVA / 100m);
+        }
+
+        foreach (var l in serviceLignes)
         {
             var lht = LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
             ht += lht;

@@ -55,11 +55,11 @@ public partial class App : Application
             try
             {
                 db = Services.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
+                StageLocationServiceLinesBeforeMigrate(db);
                 db.Database.Migrate();
                 EnsureSocieteMentionsLegalesColumn(db);
                 EnsureFactureEstPayeeColumn(db);
                 EnsureTrialLicenseColumns(db);
-                EnsureLocationLigneServiceIdColumn(db);
                 DbSeeder.Seed(db);
             }
             catch (SqliteException ex) when (
@@ -136,14 +136,39 @@ public partial class App : Application
             : Services.GetRequiredService<LoginViewModel>());
     }
 
-    /// <summary>Ensures LocationLignes.ServiceId exists so location lines can reference services.</summary>
-    private static void EnsureLocationLigneServiceIdColumn(AppDbContext db)
+
+
+    /// <summary>
+    /// Stages LocationLignes that reference services into a temp table so the reservation
+    /// migration can split product/service lines without requiring ServiceId on every DB.
+    /// </summary>
+    private static void StageLocationServiceLinesBeforeMigrate(AppDbContext db)
     {
         var conn = db.Database.GetDbConnection();
         var wasClosed = conn.State != ConnectionState.Open;
         if (wasClosed) conn.Open();
         try
         {
+            using (var create = conn.CreateCommand())
+            {
+                create.CommandText = """
+                    CREATE TABLE IF NOT EXISTS "__mig_location_services" (
+                        "LocationId" INTEGER NOT NULL,
+                        "ServiceId" INTEGER NULL,
+                        "Designation" TEXT NOT NULL,
+                        "Quantite" TEXT NOT NULL,
+                        "PrixUnitaireHT" TEXT NOT NULL,
+                        "Remise" TEXT NOT NULL,
+                        "TauxTVA" TEXT NOT NULL,
+                        "Note" TEXT NOT NULL,
+                        "CreatedAt" TEXT NOT NULL,
+                        "UpdatedAt" TEXT NOT NULL,
+                        "CreatedByUserId" INTEGER NULL
+                    );
+                    """;
+                create.ExecuteNonQuery();
+            }
+
             using var tableCheck = conn.CreateCommand();
             tableCheck.CommandText =
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='LocationLignes';";
@@ -152,22 +177,29 @@ public partial class App : Application
             using var colCheck = conn.CreateCommand();
             colCheck.CommandText =
                 "SELECT COUNT(*) FROM pragma_table_info('LocationLignes') WHERE name = 'ServiceId';";
-            if (Convert.ToInt64(colCheck.ExecuteScalar() ?? 0L) > 0) return;
+            if (Convert.ToInt64(colCheck.ExecuteScalar() ?? 0L) == 0) return;
 
-            using var alter = conn.CreateCommand();
-            alter.CommandText = "ALTER TABLE LocationLignes ADD COLUMN ServiceId INTEGER NULL;";
-            alter.ExecuteNonQuery();
-
-            try
+            using (var stage = conn.CreateCommand())
             {
-                using var idx = conn.CreateCommand();
-                idx.CommandText =
-                    "CREATE INDEX IF NOT EXISTS IX_LocationLignes_ServiceId ON LocationLignes (ServiceId);";
-                idx.ExecuteNonQuery();
+                stage.CommandText = """
+                    INSERT INTO "__mig_location_services"
+                        ("LocationId", "ServiceId", "Designation", "Quantite",
+                         "PrixUnitaireHT", "Remise", "TauxTVA", "Note", "CreatedAt", "UpdatedAt", "CreatedByUserId")
+                    SELECT "LocationId", "ServiceId", "Designation", "Quantite",
+                           "PrixUnitaireHT", "Remise", "TauxTVA", "Note", "CreatedAt", "UpdatedAt", "CreatedByUserId"
+                    FROM "LocationLignes"
+                    WHERE "ServiceId" IS NOT NULL AND "ServiceId" > 0;
+                    """;
+                stage.ExecuteNonQuery();
             }
-            catch (Exception ex)
+
+            using (var del = conn.CreateCommand())
             {
-                AppLog.Error("Failed to create LocationLignes.ServiceId index", ex, "App.EnsureLocationLigneServiceIdColumn");
+                del.CommandText = """
+                    DELETE FROM "LocationLignes"
+                    WHERE "ServiceId" IS NOT NULL AND "ServiceId" > 0;
+                    """;
+                del.ExecuteNonQuery();
             }
         }
         finally

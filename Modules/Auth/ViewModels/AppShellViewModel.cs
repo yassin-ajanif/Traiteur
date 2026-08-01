@@ -8,7 +8,7 @@ using GestionCommerciale.Modules.Devis.ViewModels;
 using GestionCommerciale.Modules.Facturation.ViewModels;
 using GestionCommerciale.Modules.FactureFournisseur.ViewModels;
 using GestionCommerciale.Modules.Livraison.ViewModels;
-using GestionCommerciale.Modules.Location.ViewModels;
+using GestionCommerciale.Modules.Reservation.ViewModels;
 using GestionCommerciale.Modules.CommandeFournisseur.ViewModels;
 using GestionCommerciale.Modules.CommandeClient.ViewModels;
 using GestionCommerciale.Modules.Pos.ViewModels;
@@ -259,7 +259,7 @@ public partial class AppShellViewModel : BaseViewModel
     [RelayCommand]
     private void GoLocation()
     {
-        var vm = _sp.GetRequiredService<LocationListViewModel>();
+        var vm = _sp.GetRequiredService<ReservationListViewModel>();
         _workspace.Open(vm);
         vm.LoadCommand.Execute(null);
     }
@@ -344,7 +344,7 @@ public partial class AppShellViewModel : BaseViewModel
         IsNavDevisActive = p is DevisListViewModel or DevisEditViewModel;
         IsNavBccActive = p is BCVListViewModel or BCVEditViewModel;
         IsNavBlActive = p is BLListViewModel or BLEditViewModel;
-        IsNavLocationActive = p is LocationListViewModel or LocationEditViewModel;
+        IsNavLocationActive = p is ReservationListViewModel or ReservationEditViewModel;
         IsNavEtatClientActive = p is EtatClientViewModel;
         IsNavFacturesActive = p is FactureListViewModel or FactureEditViewModel;
         IsNavAvoirsActive = p is AvoirListViewModel or AvoirEditViewModel;

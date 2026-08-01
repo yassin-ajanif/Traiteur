@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:GestionCommerciale.Modules.Location.ViewModels"
+             xmlns:vm="using:GestionCommerciale.Modules.Reservation.ViewModels"
              xmlns:conv="using:GestionCommerciale.Shared.Converters"
-             x:Class="GestionCommerciale.Modules.Location.Views.EtatClientView"
+             x:Class="GestionCommerciale.Modules.Reservation.Views.EtatClientView"
              x:Name="EtatClientRoot"
              x:DataType="vm:EtatClientViewModel">
   <Grid RowDefinitions="Auto,*">
@@ -30,7 +30,6 @@
                     BorderThickness="1"
                     CornerRadius="12">
               <StackPanel Spacing="0">
-                <!-- Card header -->
                 <Grid ColumnDefinitions="Auto,*,Auto">
                   <Button Grid.Column="0" Width="28" Height="28" Padding="0" Margin="0,0,8,0"
                           Background="Transparent" BorderThickness="0"
@@ -63,7 +62,6 @@
                   </StackPanel>
                 </Grid>
 
-                <!-- Expanded lines -->
                 <StackPanel IsVisible="{Binding IsExpanded}" Margin="36,12,0,0" Spacing="6">
                   <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.ItemsPanel>
@@ -90,7 +88,7 @@
                             </StackPanel>
                             <Button Grid.Column="1" VerticalAlignment="Center"
                                     Content="{Binding #EtatClientRoot.((vm:EtatClientViewModel)DataContext).BtnOpenLocation}"
-                                    Command="{Binding #EtatClientRoot.((vm:EtatClientViewModel)DataContext).OpenLocationCommand}"
+                                    Command="{Binding #EtatClientRoot.((vm:EtatClientViewModel)DataContext).OpenReservationCommand}"
                                     CommandParameter="{Binding}"/>
                           </Grid>
                         </Border>

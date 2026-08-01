@@ -2,11 +2,11 @@ using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace GestionCommerciale.Modules.Location.Views;
+namespace GestionCommerciale.Modules.Reservation.Views;
 
-public partial class LocationListView : UserControl
+public partial class ReservationListView : UserControl
 {
-    public LocationListView()
+    public ReservationListView()
     {
         InitializeComponent();
     }
@@ -14,7 +14,7 @@ public partial class LocationListView : UserControl
     protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        if (DataContext is ViewModels.LocationListViewModel vm)
+        if (DataContext is ViewModels.ReservationListViewModel vm)
             vm.LoadCommand.Execute(null);
     }
 

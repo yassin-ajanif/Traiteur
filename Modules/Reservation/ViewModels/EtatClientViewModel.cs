@@ -2,14 +2,14 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using GestionCommerciale.Modules.Location.Models;
+using GestionCommerciale.Modules.Reservation.Models;
 using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Services;
 using GestionCommerciale.Shared.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace GestionCommerciale.Modules.Location.ViewModels;
+namespace GestionCommerciale.Modules.Reservation.ViewModels;
 
 public partial class EtatClientViewModel : BaseViewModel
 {
@@ -72,9 +72,9 @@ public partial class EtatClientViewModel : BaseViewModel
             var devise = string.IsNullOrWhiteSpace(cfg.Devise) ? "MAD" : cfg.Devise.Trim();
 
             await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
-            var openLines = await db.LocationLignes.AsNoTracking()
-                .Include(l => l.Location)
-                .Where(l => l.Location != null && l.Quantite > l.QuantiteRetournee)
+            var openLines = await db.ReservationProduitLignes.AsNoTracking()
+                .Include(l => l.Reservation)
+                .Where(l => l.Reservation != null && l.Quantite > l.QuantiteRetournee)
                 .ToListAsync(cancellationToken);
 
             if (openLines.Count == 0)
@@ -85,7 +85,7 @@ public partial class EtatClientViewModel : BaseViewModel
                 return;
             }
 
-            var clientIds = openLines.Select(l => l.Location!.ClientId).Distinct().ToList();
+            var clientIds = openLines.Select(l => l.Reservation!.ClientId).Distinct().ToList();
             var clients = await db.Tiers.AsNoTracking()
                 .Where(t => clientIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, cancellationToken);
@@ -101,16 +101,16 @@ public partial class EtatClientViewModel : BaseViewModel
             var encoreSuffix = _locale.T("EtatClient_EncoreSuffix");
 
             _allClients = openLines
-                .GroupBy(l => l.Location!.ClientId)
+                .GroupBy(l => l.Reservation!.ClientId)
                 .Select(g =>
                 {
                     clients.TryGetValue(g.Key, out var c);
                     var encore = g.Sum(l => l.Quantite - l.QuantiteRetournee);
-                    var fins = g.Select(l => l.Location!.DateFinPrevue).ToList();
+                    var fins = g.Select(l => l.Reservation!.DateFinPrevue).ToList();
                     var prochaine = fins.Min();
                     var enRetard = fins.Any(f => f.Date < today);
-                    var locIds = g.Select(l => l.LocationId).Distinct().Count();
-                    var caution = g.Select(l => l.Location!).GroupBy(x => x.Id).Sum(x => x.First().Caution);
+                    var resIds = g.Select(l => l.ReservationId).Distinct().Count();
+                    var caution = g.Select(l => l.Reservation!).GroupBy(x => x.Id).Sum(x => x.First().Caution);
                     var qteLabel = encore.ToString("N0", CultureInfo.CurrentCulture);
                     var finLabel = prochaine.ToString("d", CultureInfo.CurrentCulture);
                     var row = new EtatClientRow
@@ -118,7 +118,7 @@ public partial class EtatClientViewModel : BaseViewModel
                         ClientId = g.Key,
                         ClientNom = c?.Nom ?? $"#{g.Key}",
                         ClientTelephone = c?.Telephone ?? string.Empty,
-                        NbLocationsOuvertes = locIds,
+                        NbReservationsOuvertes = resIds,
                         QteEncoreSortie = encore,
                         QteEncoreLabel = qteLabel,
                         ProchaineFinPrevue = prochaine,
@@ -127,7 +127,7 @@ public partial class EtatClientViewModel : BaseViewModel
                         RetardBadge = retardBadge,
                         CautionTotale = caution,
                         CautionLabel = $"{caution:N2} {devise}",
-                        SummaryLabel = _locale.Tf("EtatClient_CardSummary", qteLabel, locIds, finLabel),
+                        SummaryLabel = _locale.Tf("EtatClient_CardSummary", qteLabel, resIds, finLabel),
                     };
 
                     foreach (var item in BuildItems(g, refs, today, retardOui, retardNon, encoreSuffix))
@@ -148,7 +148,7 @@ public partial class EtatClientViewModel : BaseViewModel
     }
 
     private static IEnumerable<EtatClientItemRow> BuildItems(
-        IGrouping<int, LocationLigne> lines,
+        IGrouping<int, ReservationProduitLigne> lines,
         Dictionary<int, string> refs,
         DateTime today,
         string retardOui,
@@ -158,27 +158,27 @@ public partial class EtatClientViewModel : BaseViewModel
             .Select(l =>
             {
                 var encore = l.Quantite - l.QuantiteRetournee;
-                var enRetard = l.Location!.DateFinPrevue.Date < today;
+                var enRetard = l.Reservation!.DateFinPrevue.Date < today;
                 var pref = l.ProduitId is { } pid && refs.TryGetValue(pid, out var r) ? r : string.Empty;
                 var qteLabel = encore.ToString("N2", CultureInfo.CurrentCulture);
                 return new EtatClientItemRow
                 {
-                    LocationId = l.LocationId,
-                    LocationNumero = l.Location.Numero,
+                    ReservationId = l.ReservationId,
+                    ReservationNumero = l.Reservation.Numero,
                     ProduitReference = pref,
                     Designation = l.Designation,
                     QuantiteLouee = l.Quantite,
                     QuantiteRetournee = l.QuantiteRetournee,
                     QuantiteEncore = encore,
                     QuantiteEncoreLabel = $"{qteLabel} {encoreSuffix}",
-                    DateDebut = l.Location.DateDebut,
-                    DateFinPrevue = l.Location.DateFinPrevue,
-                    PeriodeLabel = $"{l.Location.DateDebut:dd/MM} → {l.Location.DateFinPrevue:dd/MM}",
+                    DateDebut = l.Reservation.DateDebut,
+                    DateFinPrevue = l.Reservation.DateFinPrevue,
+                    PeriodeLabel = $"{l.Reservation.DateDebut:dd/MM} → {l.Reservation.DateFinPrevue:dd/MM}",
                     EstEnRetard = enRetard,
                     RetardLabel = enRetard ? retardOui : retardNon,
                     MetaLabel = string.IsNullOrWhiteSpace(pref)
-                        ? $"{l.Location.Numero}  ·  {l.Location.DateDebut:dd/MM} → {l.Location.DateFinPrevue:dd/MM}"
-                        : $"{pref}  ·  {l.Location.Numero}  ·  {l.Location.DateDebut:dd/MM} → {l.Location.DateFinPrevue:dd/MM}",
+                        ? $"{l.Reservation.Numero}  ·  {l.Reservation.DateDebut:dd/MM} → {l.Reservation.DateFinPrevue:dd/MM}"
+                        : $"{pref}  ·  {l.Reservation.Numero}  ·  {l.Reservation.DateDebut:dd/MM} → {l.Reservation.DateFinPrevue:dd/MM}",
                 };
             })
             .OrderByDescending(i => i.EstEnRetard)
@@ -213,11 +213,11 @@ public partial class EtatClientViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void OpenLocation(EtatClientItemRow? item)
+    private void OpenReservation(EtatClientItemRow? item)
     {
         if (item == null) return;
-        var vm = _sp.GetRequiredService<LocationEditViewModel>();
-        vm.Load(item.LocationId);
+        var vm = _sp.GetRequiredService<ReservationEditViewModel>();
+        vm.Load(item.ReservationId);
         _workspace.Open(vm);
     }
 }

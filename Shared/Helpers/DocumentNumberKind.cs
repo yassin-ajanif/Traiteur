@@ -15,6 +15,6 @@ public static class DocumentNumberKind
         new("BR", "Nav_BR"),
         new("FAF", "Nav_FacturesFournisseur"),
         new("AVF", "Nav_AvoirFournisseur"),
-        new("LOC", "Nav_Location"),
+        new("RES", "Nav_Location"),
     ];
 }

@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace GestionCommerciale.Modules.Location.Views;
+namespace GestionCommerciale.Modules.Reservation.Views;
 
 public partial class EtatClientView : UserControl
 {

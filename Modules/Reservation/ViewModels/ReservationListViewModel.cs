@@ -1,8 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using GestionCommerciale.Modules.Location.Models;
-using GestionCommerciale.Modules.Location.Services;
+using GestionCommerciale.Modules.Reservation.Services;
 using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Helpers;
 using GestionCommerciale.Shared.Services;
@@ -10,9 +9,9 @@ using GestionCommerciale.Shared.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace GestionCommerciale.Modules.Location.ViewModels;
+namespace GestionCommerciale.Modules.Reservation.ViewModels;
 
-public partial class LocationListViewModel : BaseViewModel
+public partial class ReservationListViewModel : BaseViewModel
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly WorkspaceNavigator _workspace;
@@ -20,16 +19,16 @@ public partial class LocationListViewModel : BaseViewModel
     private readonly IDialogService _dialog;
     private readonly ILocaleService _locale;
     private readonly IAppSettingsService _settings;
-    private readonly ILocationWorkflowService _workflow;
+    private readonly IReservationWorkflowService _workflow;
 
-    public LocationListViewModel(
+    public ReservationListViewModel(
         IDbContextFactory<AppDbContext> dbFactory,
         WorkspaceNavigator workspaceNavigator,
         IServiceProvider sp,
         IDialogService dialog,
         ILocaleService locale,
         IAppSettingsService settings,
-        ILocationWorkflowService workflow)
+        IReservationWorkflowService workflow)
     {
         _dbFactory = dbFactory;
         _workspace = workspaceNavigator;
@@ -76,8 +75,8 @@ public partial class LocationListViewModel : BaseViewModel
         Title = _locale.T("LocList_Title");
     }
 
-    public ObservableCollection<LocationListRow> Items { get; } = [];
-    [ObservableProperty] private LocationListRow? _selected;
+    public ObservableCollection<ReservationListRow> Items { get; } = [];
+    [ObservableProperty] private ReservationListRow? _selected;
     [ObservableProperty] private string _searchText = string.Empty;
 
     partial void OnSearchTextChanged(string value) => _ = LoadPageAsync(CancellationToken.None, true);
@@ -93,7 +92,7 @@ public partial class LocationListViewModel : BaseViewModel
             var cfg = await _settings.GetAsync(ct);
             var devise = string.IsNullOrWhiteSpace(cfg.Devise) ? "MAD" : cfg.Devise.Trim();
             await using var db = await _dbFactory.CreateDbContextAsync(ct);
-            var q = db.Locations.AsNoTracking().Include(b => b.Lignes).AsQueryable();
+            var q = db.Reservations.AsNoTracking().Include(b => b.ProduitLignes).Include(b => b.ServiceLignes).AsQueryable();
             if (_dateFrom.HasValue)
                 q = q.Where(b => b.Date >= _dateFrom.Value);
             if (_dateTo.HasValue)
@@ -101,8 +100,8 @@ public partial class LocationListViewModel : BaseViewModel
 
             var search = SearchText?.Trim();
             if (!string.IsNullOrEmpty(search))
-                q = q.Where(loc => EF.Functions.Like(loc.Numero, $"%{search}%")
-                    || db.Tiers.AsNoTracking().Any(t => t.Id == loc.ClientId && EF.Functions.Like(t.Nom, $"%{search}%")));
+                q = q.Where(res => EF.Functions.Like(res.Numero, $"%{search}%")
+                    || db.Tiers.AsNoTracking().Any(t => t.Id == res.ClientId && EF.Functions.Like(t.Nom, $"%{search}%")));
 
             var total = await q.CountAsync(ct);
             var list = await q.OrderByDescending(b => b.Date)
@@ -112,13 +111,13 @@ public partial class LocationListViewModel : BaseViewModel
             var noms = await db.Tiers.AsNoTracking()
                 .Where(t => ids.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.Nom, ct);
-            var selId = Selected?.Location.Id;
+            var selId = Selected?.Reservation.Id;
             Items.Clear();
             foreach (var b in list)
-                Items.Add(LocationListRow.Create(b, noms.GetValueOrDefault(b.ClientId) ?? string.Empty, devise, _locale));
+                Items.Add(ReservationListRow.Create(b, noms.GetValueOrDefault(b.ClientId) ?? string.Empty, devise, _locale));
             Pagination.TotalCount = total;
             if (selId is { } id)
-                Selected = Items.FirstOrDefault(x => x.Location.Id == id);
+                Selected = Items.FirstOrDefault(x => x.Reservation.Id == id);
         }
         finally
         {
@@ -157,9 +156,9 @@ public partial class LocationListViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void NewLocation()
+    private void NewReservation()
     {
-        var vm = _sp.GetRequiredService<LocationEditViewModel>();
+        var vm = _sp.GetRequiredService<ReservationEditViewModel>();
         vm.Load(null);
         _workspace.Open(vm);
     }
@@ -168,16 +167,16 @@ public partial class LocationListViewModel : BaseViewModel
     private void OpenSelected()
     {
         if (Selected == null) return;
-        var vm = _sp.GetRequiredService<LocationEditViewModel>();
-        vm.Load(Selected.Location.Id);
+        var vm = _sp.GetRequiredService<ReservationEditViewModel>();
+        vm.Load(Selected.Reservation.Id);
         _workspace.Open(vm);
     }
 
     [RelayCommand]
-    private async Task DeleteLocationAsync(LocationListRow? row, CancellationToken cancellationToken)
+    private async Task DeleteReservationAsync(ReservationListRow? row, CancellationToken cancellationToken)
     {
         if (row == null) return;
-        var item = row.Location;
+        var item = row.Reservation;
 
         if (!await _dialog.ConfirmAsync(_locale.T("Loc_Title"), _locale.Tf("Loc_ConfirmDelete", item.Numero), cancellationToken))
             return;
@@ -188,18 +187,18 @@ public partial class LocationListViewModel : BaseViewModel
             await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
             await using var trx = await db.Database.BeginTransactionAsync(cancellationToken);
             await _workflow.ClearStockAsync(db, item.Id, item.Numero, null, cancellationToken);
-            var entity = await db.Locations.Include(b => b.Lignes).FirstAsync(b => b.Id == item.Id, cancellationToken);
-            db.Locations.Remove(entity);
+            var entity = await db.Reservations.Include(b => b.ProduitLignes).Include(b => b.ServiceLignes).FirstAsync(b => b.Id == item.Id, cancellationToken);
+            db.Reservations.Remove(entity);
             await db.SaveChangesAsync(cancellationToken);
             await trx.CommitAsync(cancellationToken);
-            if (Selected?.Location.Id == item.Id)
+            if (Selected?.Reservation.Id == item.Id)
                 Selected = null;
             Items.Remove(row);
             await _dialog.ShowInfoAsync(_locale.T("Loc_Title"), _locale.T("Loc_Deleted"), cancellationToken);
         }
         catch (Exception ex)
         {
-            AppLog.Error("Échec de la suppression de la location", ex, "LocationListViewModel.DeleteLocationAsync");
+            AppLog.Error("Échec de la suppression de la réservation", ex, "ReservationListViewModel.DeleteReservationAsync");
             await _dialog.ShowErrorAsync(_locale.T("Loc_Title"), ex.Message, cancellationToken);
         }
         finally

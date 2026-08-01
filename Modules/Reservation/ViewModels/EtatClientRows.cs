@@ -1,14 +1,14 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace GestionCommerciale.Modules.Location.ViewModels;
+namespace GestionCommerciale.Modules.Reservation.ViewModels;
 
 public sealed partial class EtatClientRow : ObservableObject
 {
     public int ClientId { get; init; }
     public string ClientNom { get; init; } = string.Empty;
     public string ClientTelephone { get; init; } = string.Empty;
-    public int NbLocationsOuvertes { get; init; }
+    public int NbReservationsOuvertes { get; init; }
     public decimal QteEncoreSortie { get; init; }
     public string QteEncoreLabel { get; init; } = string.Empty;
     public DateTime? ProchaineFinPrevue { get; init; }
@@ -26,8 +26,8 @@ public sealed partial class EtatClientRow : ObservableObject
 
 public sealed class EtatClientItemRow
 {
-    public int LocationId { get; init; }
-    public string LocationNumero { get; init; } = string.Empty;
+    public int ReservationId { get; init; }
+    public string ReservationNumero { get; init; } = string.Empty;
     public string ProduitReference { get; init; } = string.Empty;
     public string Designation { get; init; } = string.Empty;
     public decimal QuantiteLouee { get; init; }

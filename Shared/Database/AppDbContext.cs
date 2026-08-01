@@ -3,7 +3,7 @@ using GestionCommerciale.Modules.Services.Models;
 using GestionCommerciale.Modules.Devis.Models;
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.Livraison.Models;
-using GestionCommerciale.Modules.Location.Models;
+using GestionCommerciale.Modules.Reservation.Models;
 using GestionCommerciale.Modules.AvoirFournisseur.Models;
 using GestionCommerciale.Modules.CommandeFournisseur.Models;
 using GestionCommerciale.Modules.CommandeClient.Models;
@@ -48,8 +48,9 @@ public class AppDbContext : DbContext
     public DbSet<TypeCharge> TypesCharge => Set<TypeCharge>();
     public DbSet<Charge> Charges => Set<Charge>();
     public DbSet<Service> Services => Set<Service>();
-    public DbSet<Location> Locations => Set<Location>();
-    public DbSet<LocationLigne> LocationLignes => Set<LocationLigne>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<ReservationProduitLigne> ReservationProduitLignes => Set<ReservationProduitLigne>();
+    public DbSet<ReservationServiceLigne> ReservationServiceLignes => Set<ReservationServiceLigne>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -255,11 +256,12 @@ public class AppDbContext : DbContext
             e.HasIndex(l => l.ServiceId);
         });
 
-        modelBuilder.Entity<Location>(e =>
+        modelBuilder.Entity<Reservation>(e =>
         {
-            e.ToTable("Locations");
+            e.ToTable("Reservations");
             e.Property(l => l.Statut).HasConversion<int>();
-            e.HasMany(l => l.Lignes).WithOne(x => x.Location).HasForeignKey(x => x.LocationId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(l => l.ProduitLignes).WithOne(x => x.Reservation).HasForeignKey(x => x.ReservationId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(l => l.ServiceLignes).WithOne(x => x.Reservation).HasForeignKey(x => x.ReservationId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(l => l.Facture).WithMany()
                 .HasForeignKey(l => l.FactureId)
                 .OnDelete(DeleteBehavior.SetNull);
@@ -272,14 +274,21 @@ public class AppDbContext : DbContext
             e.HasIndex(l => l.Numero);
         });
 
-        modelBuilder.Entity<LocationLigne>(e =>
+        modelBuilder.Entity<ReservationProduitLigne>(e =>
         {
-            e.ToTable("LocationLignes");
+            e.ToTable("ReservationProduitLignes");
             e.HasIndex(l => l.ProduitId);
+            e.HasIndex(l => l.ReservationId);
+        });
+
+        modelBuilder.Entity<ReservationServiceLigne>(e =>
+        {
+            e.ToTable("ReservationServiceLignes");
             e.HasOne<Service>().WithMany()
                 .HasForeignKey(l => l.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(l => l.ServiceId);
+            e.HasIndex(l => l.ReservationId);
         });
     }
 

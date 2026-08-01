@@ -3,11 +3,11 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 
-namespace GestionCommerciale.Modules.Location.Views;
+namespace GestionCommerciale.Modules.Reservation.Views;
 
-public partial class LocationEditView : UserControl
+public partial class ReservationEditView : UserControl
 {
-    public LocationEditView()
+    public ReservationEditView()
     {
         InitializeComponent();
     }
@@ -20,7 +20,7 @@ public partial class LocationEditView : UserControl
 
     private void OnBlChipTapped(object? sender, TappedEventArgs e)
     {
-        if (DataContext is not ViewModels.LocationEditViewModel vm) return;
+        if (DataContext is not ViewModels.ReservationEditViewModel vm) return;
         e.Handled = true;
         vm.ToBlCommand.Execute(null);
     }
