@@ -17,6 +17,7 @@
                   BorderBrush="{Binding IsNavHomeActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
 
           <Button Content="{Binding NavPos}" Command="{Binding GoPosCommand}" HorizontalAlignment="Stretch"
+                  IsVisible="False"
                   Background="{Binding IsNavPosActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
                   Foreground="{Binding IsNavPosActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
                   BorderBrush="{Binding IsNavPosActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"
