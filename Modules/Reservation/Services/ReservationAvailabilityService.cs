@@ -135,6 +135,167 @@ public sealed class ReservationAvailabilityService : IReservationAvailabilitySer
         return conflicts;
     }
 
+    public async Task<ProductAvailabilityMonthResult?> GetProductMonthAsync(
+        int produitId,
+        DateTime month,
+        decimal qtyNeeded,
+        CancellationToken cancellationToken = default)
+    {
+        if (produitId <= 0)
+            return null;
+
+        var needed = Math.Max(1m, qtyNeeded);
+        var monthStart = new DateTime(month.Year, month.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        // Grid includes days from previous/next month to fill weeks (Monday-first).
+        var gridStart = monthStart.AddDays(-(((int)monthStart.DayOfWeek + 6) % 7));
+        var gridEnd = gridStart.AddDays(41); // 6 weeks
+
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var produit = await db.Produits.AsNoTracking()
+            .Where(p => p.Id == produitId)
+            .Select(p => new { p.Id, p.Reference, p.Designation, p.StockActuel })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (produit is null)
+            return null;
+
+        var openLines = await (
+            from l in db.ReservationProduitLignes.AsNoTracking()
+            join r in db.Reservations.AsNoTracking() on l.ReservationId equals r.Id
+            where l.ProduitId == produitId && l.Quantite > l.QuantiteRetournee
+            select new
+            {
+                r.Id,
+                r.Numero,
+                r.ClientId,
+                r.DateDebut,
+                DateFin = r.DateRetourEffective ?? r.DateFinPrevue,
+                Encore = l.Quantite - l.QuantiteRetournee
+            }).ToListAsync(cancellationToken);
+
+        var owned = produit.StockActuel + openLines.Sum(l => l.Encore);
+
+        // Aggregate bookings that touch the visible grid.
+        var relevant = openLines
+            .Where(l => PeriodsOverlap(gridStart, gridEnd, l.DateDebut.Date, l.DateFin.Date))
+            .ToList();
+
+        var clientIds = relevant.Select(l => l.ClientId).Distinct().ToList();
+        var clientNames = clientIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await db.Tiers.AsNoTracking()
+                .Where(t => clientIds.Contains(t.Id))
+                .ToDictionaryAsync(t => t.Id, t => t.Nom, cancellationToken);
+
+        var bookedByDay = new Dictionary<DateTime, decimal>();
+        foreach (var b in relevant)
+        {
+            var start = b.DateDebut.Date;
+            var end = b.DateFin.Date;
+            if (end < start) (start, end) = (end, start);
+            for (var d = start; d <= end; d = d.AddDays(1))
+            {
+                if (d < gridStart || d > gridEnd) continue;
+                bookedByDay.TryGetValue(d, out var sum);
+                bookedByDay[d] = sum + b.Encore;
+            }
+        }
+
+        var days = new List<ProductAvailabilityDay>(42);
+        for (var i = 0; i < 42; i++)
+        {
+            var date = gridStart.AddDays(i);
+            var inMonth = date.Month == monthStart.Month;
+            bookedByDay.TryGetValue(date, out var booked);
+            var available = Math.Max(0, owned - booked);
+            ProductAvailabilityDayLevel level;
+            if (!inMonth)
+                level = ProductAvailabilityDayLevel.OutsideMonth;
+            else if (available >= needed && booked <= 0)
+                level = ProductAvailabilityDayLevel.Free;
+            else if (available >= needed)
+                level = ProductAvailabilityDayLevel.Partial;
+            else
+                level = ProductAvailabilityDayLevel.Full;
+
+            days.Add(new ProductAvailabilityDay(date, inMonth, booked, available, owned, level));
+        }
+
+        var today = DateTime.Today;
+        var upcomingBookings = relevant
+            .Where(l => l.DateFin.Date >= today)
+            .GroupBy(l => l.Id)
+            .Select(g =>
+            {
+                var first = g.First();
+                clientNames.TryGetValue(first.ClientId, out var nom);
+                return new ProductAvailabilityBooking(
+                    first.Numero,
+                    string.IsNullOrWhiteSpace(nom) ? $"#{first.ClientId}" : nom,
+                    first.DateDebut.Date,
+                    first.DateFin.Date,
+                    g.Sum(x => x.Encore));
+            })
+            .OrderBy(b => b.DateDebut)
+            .ThenBy(b => b.Numero)
+            .ToList();
+
+        var freeWindows = BuildFreeWindows(
+            days.Where(d => d.IsCurrentMonth && d.Date >= today).OrderBy(d => d.Date),
+            needed);
+
+        return new ProductAvailabilityMonthResult(
+            produit.Id,
+            produit.Reference,
+            produit.Designation,
+            owned,
+            monthStart,
+            days,
+            upcomingBookings,
+            freeWindows);
+    }
+
+    private static List<ProductAvailabilityFreeWindow> BuildFreeWindows(
+        IEnumerable<ProductAvailabilityDay> futureDays,
+        decimal needed)
+    {
+        var windows = new List<ProductAvailabilityFreeWindow>();
+        DateTime? start = null;
+        DateTime? end = null;
+        decimal minAvail = 0;
+
+        foreach (var day in futureDays)
+        {
+            var ok = day.Available >= needed;
+            if (ok)
+            {
+                if (start is null)
+                {
+                    start = day.Date;
+                    end = day.Date;
+                    minAvail = day.Available;
+                }
+                else
+                {
+                    end = day.Date;
+                    minAvail = Math.Min(minAvail, day.Available);
+                }
+            }
+            else if (start is not null && end is not null)
+            {
+                windows.Add(new ProductAvailabilityFreeWindow(start.Value, end.Value, minAvail));
+                start = end = null;
+            }
+        }
+
+        if (start is not null && end is not null)
+            windows.Add(new ProductAvailabilityFreeWindow(start.Value, end.Value, minAvail));
+
+        return windows;
+    }
+
     private static bool PeriodsOverlap(DateTime aStart, DateTime aEnd, DateTime bStart, DateTime bEnd) =>
         aStart <= bEnd && bStart <= aEnd;
 }

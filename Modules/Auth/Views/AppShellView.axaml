@@ -16,6 +16,13 @@
                   Foreground="{Binding IsNavHomeActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
                   BorderBrush="{Binding IsNavHomeActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
 
+          <Button Content="{Binding NavAvailability}" Command="{Binding GoAvailabilityCommand}" HorizontalAlignment="Stretch"
+                  IsVisible="{Binding ShowNavAvailability}"
+                  Background="{Binding IsNavAvailabilityActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
+                  Foreground="{Binding IsNavAvailabilityActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
+                  BorderBrush="{Binding IsNavAvailabilityActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"
+                  Margin="0,2,0,0"/>
+
           <Button Content="{Binding NavPos}" Command="{Binding GoPosCommand}" HorizontalAlignment="Stretch"
                   IsVisible="False"
                   Background="{Binding IsNavPosActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
