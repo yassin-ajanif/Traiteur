@@ -60,6 +60,7 @@ public partial class ReservationEditViewModel : BaseViewModel
         _locale.CultureApplied += (_, _) => RefreshUi();
         ProduitLignes.CollectionChanged += ProduitLignesOnCollectionChanged;
         ServiceLignes.CollectionChanged += ServiceLignesOnCollectionChanged;
+        Retours.CollectionChanged += RetoursOnCollectionChanged;
         Title = _locale.T("Loc_Title");
         RefreshUi();
     }
@@ -120,6 +121,7 @@ public partial class ReservationEditViewModel : BaseViewModel
     [ObservableProperty] private string _addLineSearchText = string.Empty;
     [ObservableProperty] private object? _addLineCatalogPick;
     private bool _suppressAddLinePick;
+    private bool _suppressRetourEdit;
 
     private void ProduitLignesOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -150,6 +152,44 @@ public partial class ReservationEditViewModel : BaseViewModel
         RefreshTotals();
     }
 
+    private void RetoursOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (ReservationRetourRow row in e.NewItems)
+                row.PropertyChanged += RetourOnPropertyChanged;
+        if (e.OldItems != null)
+            foreach (ReservationRetourRow row in e.OldItems)
+                row.PropertyChanged -= RetourOnPropertyChanged;
+        RefreshRetourEditLimits();
+    }
+
+    private void RetourOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_suppressRetourEdit) return;
+        if (sender is not ReservationRetourRow row) return;
+
+        if (e.PropertyName != nameof(ReservationRetourRow.Quantite))
+            return;
+
+        var others = Retours
+            .Where(r => ReferenceEquals(r.Line, row.Line) && !ReferenceEquals(r, row))
+            .Sum(r => r.Quantite);
+        var max = Math.Max(0, row.Line.Quantite - others);
+        var clamped = row.Quantite;
+        if (clamped < 0) clamped = 0;
+        if (clamped > max) clamped = max;
+        if (clamped != row.Quantite)
+        {
+            _suppressRetourEdit = true;
+            row.Quantite = clamped;
+            _suppressRetourEdit = false;
+        }
+
+        SyncQuantiteRetourneeFromHistory();
+        RefreshDerivedStatut();
+        RefreshRetourProduitOptions();
+    }
+
     private void ProduitLineOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(ReservationProduitLineRow.ProduitId)
@@ -159,6 +199,7 @@ public partial class ReservationEditViewModel : BaseViewModel
         {
             RefreshDerivedStatut();
             RefreshRetourProduitOptions();
+            RefreshRetourEditLimits();
         }
         if ((e.PropertyName is nameof(ReservationProduitLineRow.Reference) or nameof(ReservationProduitLineRow.Designation))
             && sender is ReservationProduitLineRow labelRow)
@@ -776,6 +817,18 @@ public partial class ReservationEditViewModel : BaseViewModel
     {
         foreach (var line in ProduitLignes)
             line.QuantiteRetournee = Retours.Where(r => ReferenceEquals(r.Line, line)).Sum(r => r.Quantite);
+        RefreshRetourEditLimits();
+    }
+
+    private void RefreshRetourEditLimits()
+    {
+        foreach (var row in Retours)
+        {
+            var others = Retours
+                .Where(r => ReferenceEquals(r.Line, row.Line) && !ReferenceEquals(r, row))
+                .Sum(r => r.Quantite);
+            row.MaxQuantite = Math.Max(0, row.Line.Quantite - others);
+        }
     }
 
     private void RemoveRetoursForLine(ReservationProduitLineRow line)

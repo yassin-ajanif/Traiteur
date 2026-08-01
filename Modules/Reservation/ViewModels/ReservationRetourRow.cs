@@ -9,6 +9,7 @@ public partial class ReservationRetourRow : ObservableObject
     [ObservableProperty] private DateTime _dateRetour = DateTime.Today;
     [ObservableProperty] private decimal _quantite;
     [ObservableProperty] private string _note = string.Empty;
+    [ObservableProperty] private decimal _maxQuantite = 999_999m;
 
     public ReservationRetourRow(ReservationProduitLineRow line)
     {
