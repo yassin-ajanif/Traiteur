@@ -26,5 +26,12 @@ public partial class BLEditView : UserControl
         vm.OpenLinkedFactureCommand.Execute(null);
     }
 
+    private void OnReservationChipTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is not BLEditViewModel vm) return;
+        e.Handled = true;
+        vm.OpenLinkedReservationCommand.Execute(null);
+    }
+
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 }

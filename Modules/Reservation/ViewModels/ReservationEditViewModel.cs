@@ -732,9 +732,8 @@ public partial class ReservationEditViewModel : BaseViewModel
                 Numero = blNumero,
                 ClientId = res.ClientId,
                 Date = DateTime.Today,
-                Note = string.IsNullOrWhiteSpace(res.Note)
-                    ? _locale.Tf("Loc_BlNoteFrom", res.Numero)
-                    : res.Note,
+                ReservationId = res.Id,
+                Note = res.Note ?? string.Empty,
                 CreatedByUserId = _session.UserId
             };
             foreach (var l in res.ProduitLignes.OrderBy(x => x.Id))

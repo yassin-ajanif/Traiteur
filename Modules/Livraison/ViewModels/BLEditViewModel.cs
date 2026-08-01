@@ -10,6 +10,7 @@ using GestionCommerciale.Modules.Facturation.Services;
 using GestionCommerciale.Modules.Facturation.ViewModels;
 using GestionCommerciale.Modules.Livraison.Models;
 using GestionCommerciale.Modules.Livraison.Services;
+using GestionCommerciale.Modules.Reservation.ViewModels;
 using GestionCommerciale.Modules.Stock.Services;
 using GestionCommerciale.Modules.Tiers.Models;
 using GestionCommerciale.Shared.Database;
@@ -111,9 +112,13 @@ public partial class BLEditViewModel : BaseViewModel
     [ObservableProperty] private string _invoicedLabel = string.Empty;
     [ObservableProperty] private int? _linkedFactureId;
     [ObservableProperty] private string _bonCommandeReference = string.Empty;
+    [ObservableProperty] private int? _reservationId;
+    [ObservableProperty] private string _reservationLabel = string.Empty;
     public bool HasInvoicedLabel => !string.IsNullOrEmpty(InvoicedLabel);
+    public bool HasReservationLabel => !string.IsNullOrEmpty(ReservationLabel);
 
     partial void OnInvoicedLabelChanged(string value) => OnPropertyChanged(nameof(HasInvoicedLabel));
+    partial void OnReservationLabelChanged(string value) => OnPropertyChanged(nameof(HasReservationLabel));
 
     [ObservableProperty] private decimal _totalHt;
     [ObservableProperty] private decimal _totalTva;
@@ -354,6 +359,8 @@ public partial class BLEditViewModel : BaseViewModel
     {
         BlId = id;
         BonCommandeReference = string.Empty;
+        ReservationId = null;
+        ReservationLabel = string.Empty;
         DevisId = null;
         Lignes.Clear();
         ResetAddProductSearch();
@@ -401,6 +408,38 @@ public partial class BLEditViewModel : BaseViewModel
                 .Select(x => x.Numero)
                 .FirstAsync(cancellationToken);
         }
+
+        ReservationId = b.ReservationId;
+        if (ReservationId is null)
+        {
+            ReservationId = await db.Reservations.AsNoTracking()
+                .Where(r => r.BonLivraisonId == b.Id)
+                .Select(r => (int?)r.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        if (ReservationId is { } resId)
+        {
+            var resNumero = await db.Reservations.AsNoTracking()
+                .Where(r => r.Id == resId)
+                .Select(r => r.Numero)
+                .FirstOrDefaultAsync(cancellationToken);
+            ReservationLabel = string.IsNullOrEmpty(resNumero)
+                ? string.Empty
+                : _locale.Tf("BL_ResChip", resNumero);
+
+            // Strip legacy auto note "Réservation {numero}" now shown as chip.
+            if (!string.IsNullOrEmpty(resNumero)
+                && string.Equals(userNote.Trim(), _locale.Tf("Loc_BlNoteFrom", resNumero).Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                userNote = string.Empty;
+            }
+        }
+        else
+        {
+            ReservationLabel = string.Empty;
+        }
+
         Numero = b.Numero;
         ClientId = b.ClientId;
         Date = new DateTimeOffset(b.Date);
@@ -558,6 +597,7 @@ public partial class BLEditViewModel : BaseViewModel
                     Numero = num,
                     ClientId = ClientId,
                     DevisId = DevisId,
+                    ReservationId = ReservationId,
                     Date = Date.DateTime,
                     Note = BonCommandeReferenceStorage.Format(BonCommandeReference, Note),
                     CreatedByUserId = _session.UserId
@@ -586,6 +626,7 @@ public partial class BLEditViewModel : BaseViewModel
                 entity = await db.BonsLivraison.Include(b => b.Lignes).FirstAsync(b => b.Id == BlId, cancellationToken);
                 entity.ClientId = ClientId;
                 entity.DevisId = DevisId;
+                entity.ReservationId = ReservationId;
                 entity.Date = Date.DateTime;
                 entity.Note = BonCommandeReferenceStorage.Format(BonCommandeReference, Note);
                 entity.BonCommandeClientId = null;
@@ -652,6 +693,15 @@ public partial class BLEditViewModel : BaseViewModel
         if (LinkedFactureId is not int factureId) return;
         var vm = _sp.GetRequiredService<FactureEditViewModel>();
         vm.Load(factureId);
+        _workspace.Open(vm);
+    }
+
+    [RelayCommand]
+    private void OpenLinkedReservation()
+    {
+        if (ReservationId is not int reservationId) return;
+        var vm = _sp.GetRequiredService<ReservationEditViewModel>();
+        vm.Load(reservationId);
         _workspace.Open(vm);
     }
 

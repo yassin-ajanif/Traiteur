@@ -332,6 +332,7 @@ public static class UiTranslations
         ["Loc_Statut_Retournee"] = ("Retournée", "مرجعة"),
         ["Loc_ToBlNeedSave"] = ("Enregistrez la réservation avant de créer un bon de livraison.", "احفظ الحجز قبل إنشاء أمر التسليم."),
         ["Loc_BlChip"] = ("BL {0}", "تسليم {0}"),
+        ["BL_ResChip"] = ("Réservation {0}", "حجز {0}"),
         ["Loc_BlNoteFrom"] = ("Réservation {0}", "حجز {0}"),
         ["Res_SectionProduits"] = ("Produits", "المنتجات"),
         ["Res_SectionServices"] = ("Services", "الخدمات"),

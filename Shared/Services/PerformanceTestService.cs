@@ -169,7 +169,7 @@ public class PerformanceTestService
         for (var i = 0; i < DocumentCount; i += batch)
         {
             var sb = new System.Text.StringBuilder();
-            sb.Append("INSERT INTO BonsLivraison (Id,CreatedAt,UpdatedAt,Numero,ClientId,DevisId,BonCommandeClientId,FactureId,Date,Note) VALUES ");
+            sb.Append("INSERT INTO BonsLivraison (Id,CreatedAt,UpdatedAt,Numero,ClientId,DevisId,BonCommandeClientId,ReservationId,FactureId,Date,Note) VALUES ");
             var end = Math.Min(i + batch, DocumentCount);
             for (var j = i; j < end; j++)
             {
@@ -178,7 +178,7 @@ public class PerformanceTestService
                 var date = DateForDocumentIndex(startDate, j);
                 var year = DateTime.Parse(date).Year;
                 if (j > i) sb.Append(',');
-                sb.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}','BL-{year}-{j:D6}',{clientId},NULL,NULL,NULL,'{date}','')");
+                sb.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}','BL-{year}-{j:D6}',{clientId},NULL,NULL,NULL,NULL,'{date}','')");
             }
             await ExecAsync(conn, sb.ToString(), ct);
         }
