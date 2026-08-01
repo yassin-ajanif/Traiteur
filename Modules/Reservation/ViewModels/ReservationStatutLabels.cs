@@ -42,20 +42,20 @@ public static class ReservationStatutLabels
     {
         StatutReservation.Retournee => Brush.Parse("#DCFCE7"),
         StatutReservation.PartiellementRetournee => Brush.Parse("#FEF3C7"),
-        _ => Brush.Parse("#DBEAFE")
+        _ => Brush.Parse("#F5E9C8")
     };
 
     public static IBrush ChipForeground(StatutReservation s) => s switch
     {
         StatutReservation.Retournee => Brush.Parse("#166534"),
         StatutReservation.PartiellementRetournee => Brush.Parse("#92400E"),
-        _ => Brush.Parse("#1E40AF")
+        _ => Brush.Parse("#8A7020")
     };
 
     public static IBrush ChipBorder(StatutReservation s) => s switch
     {
         StatutReservation.Retournee => Brush.Parse("#86EFAC"),
         StatutReservation.PartiellementRetournee => Brush.Parse("#FCD34D"),
-        _ => Brush.Parse("#93C5FD")
+        _ => Brush.Parse("#C4A035")
     };
 }

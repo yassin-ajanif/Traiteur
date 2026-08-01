@@ -10,11 +10,11 @@ public sealed class NavTabHighlightConverter : IValueConverter
 {
     public static readonly NavTabHighlightConverter Instance = new();
 
-    private static readonly SolidColorBrush Primary = new(Color.Parse("#2563EB"));
+    private static readonly SolidColorBrush Primary = new(Color.Parse("#C4A035"));
     private static readonly SolidColorBrush Surface = new(Color.Parse("#FFFFFF"));
     private static readonly SolidColorBrush Text = new(Color.Parse("#1F2937"));
     private static readonly SolidColorBrush White = new(Colors.White);
-    private static readonly SolidColorBrush Border = new(Color.Parse("#CFDCF7"));
+    private static readonly SolidColorBrush Border = new(Color.Parse("#E0D5BC"));
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {

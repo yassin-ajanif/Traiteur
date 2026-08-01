@@ -89,15 +89,18 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate DataType="vm:LinkedBrRow">
-              <Border Padding="6,4" Background="#DBEAFE" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="6">
+              <Border Padding="6,4"
+                      Background="{DynamicResource CourseraPrimaryBrush}"
+                      BorderBrush="{DynamicResource CourseraPrimaryHoverBrush}"
+                      BorderThickness="1" CornerRadius="6">
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                  <TextBlock Text="{Binding Numero}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12"
-                             Foreground="#1E40AF" Cursor="Hand" Tapped="OnLinkedBrNumeroTapped"/>
+                  <TextBlock Text="{Binding Numero}" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"
+                             Foreground="White" Cursor="Hand" Tapped="OnLinkedBrNumeroTapped"/>
                   <Button Content="×" FontSize="12" Padding="2,0" MinWidth="0" MinHeight="0"
                           ToolTip.Tip="{Binding $parent[UserControl].((vm:FactureFournisseurEditViewModel)DataContext).LblLinkedBrs}"
                           Command="{Binding $parent[UserControl].((vm:FactureFournisseurEditViewModel)DataContext).RemoveBrGroupCommand}"
                           CommandParameter="{Binding}"
-                          Background="Transparent" Foreground="#666"/>
+                          Background="Transparent" Foreground="White"/>
                 </StackPanel>
               </Border>
             </DataTemplate>

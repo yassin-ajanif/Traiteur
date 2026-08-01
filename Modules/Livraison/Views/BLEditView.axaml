@@ -24,9 +24,12 @@
         </Border.ContextMenu>
         <StackPanel Orientation="Horizontal" Spacing="12">
           <TextBlock Text="{Binding Numero}" FontWeight="Bold"/>
-          <Border Padding="6,2" Background="#DBEAFE" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="4"
+          <Border Padding="6,2"
+                  Background="{DynamicResource CourseraPrimaryBrush}"
+                  BorderBrush="{DynamicResource CourseraPrimaryHoverBrush}"
+                  BorderThickness="1" CornerRadius="4"
                   IsVisible="{Binding HasReservationLabel}" Cursor="Hand" Tapped="OnReservationChipTapped">
-            <TextBlock Text="{Binding ReservationLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF"/>
+            <TextBlock Text="{Binding ReservationLabel}" FontSize="11" FontWeight="Bold" Foreground="White"/>
           </Border>
           <Border Padding="6,2" Background="#DCFCE7" BorderBrush="#86EFAC" BorderThickness="1" CornerRadius="4"
                   IsVisible="{Binding HasInvoicedLabel}" Cursor="Hand" Tapped="OnInvoicedChipTapped">

@@ -1,14 +1,14 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Styles.Resources>
-    <Color x:Key="CourseraBgColor">#EEF4FF</Color>
+    <Color x:Key="CourseraBgColor">#F7F4EC</Color>
     <Color x:Key="CourseraSurfaceColor">#FFFFFF</Color>
-    <Color x:Key="CourseraSurfaceMutedColor">#EAF2FF</Color>
-    <Color x:Key="CourseraBorderColor">#CFDCF7</Color>
+    <Color x:Key="CourseraSurfaceMutedColor">#F1EBDD</Color>
+    <Color x:Key="CourseraBorderColor">#E0D5BC</Color>
     <Color x:Key="CourseraTextColor">#1F2937</Color>
-    <Color x:Key="CourseraSubtleTextColor">#5E7296</Color>
-    <Color x:Key="CourseraPrimaryColor">#2563EB</Color>
-    <Color x:Key="CourseraPrimaryHoverColor">#1D4ED8</Color>
+    <Color x:Key="CourseraSubtleTextColor">#6B6352</Color>
+    <Color x:Key="CourseraPrimaryColor">#C4A035</Color>
+    <Color x:Key="CourseraPrimaryHoverColor">#A8862A</Color>
     <Color x:Key="CourseraSuccessColor">#16A34A</Color>
     <Color x:Key="CourseraDangerColor">#DC2626</Color>
     <Color x:Key="CourseraWarningColor">#D97706</Color>

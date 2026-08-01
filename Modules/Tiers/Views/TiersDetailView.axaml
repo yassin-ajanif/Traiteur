@@ -55,15 +55,15 @@
         <Grid ColumnDefinitions="*,Auto">
           <Border Grid.Column="0"
                   Padding="8,5"
-                  Background="#DBEAFE"
-                  BorderBrush="#3B82F6"
+                  Background="{DynamicResource CourseraPrimaryBrush}"
+                  BorderBrush="{DynamicResource CourseraPrimaryHoverBrush}"
                   BorderThickness="1"
                   CornerRadius="6"
                   HorizontalAlignment="Left"
                   VerticalAlignment="Center">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="{Binding LblSoldeActuel}" FontWeight="SemiBold" FontSize="12" Foreground="#1E40AF" VerticalAlignment="Center"/>
-              <TextBlock Text="{Binding SoldeActuelText}" FontWeight="SemiBold" FontSize="13" Foreground="#1E40AF" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding LblSoldeActuel}" FontWeight="SemiBold" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding SoldeActuelText}" FontWeight="SemiBold" FontSize="13" Foreground="White" VerticalAlignment="Center"/>
             </StackPanel>
           </Border>
           <Button Grid.Column="1" Content="{Binding BtnPdfLedger}" Command="{Binding ExportLedgerPdfCommand}"/>
