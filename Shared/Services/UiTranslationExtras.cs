@@ -9,6 +9,8 @@ internal static class UiTranslationExtras
     {
         ["Btn_Back"] = ("Retour", "رجوع"),
         ["Btn_Cancel"] = ("Annuler", "إلغاء"),
+        ["Btn_Yes"] = ("Oui", "نعم"),
+        ["Btn_No"] = ("Non", "لا"),
         ["Btn_Save"] = ("Enregistrer", "حفظ"),
         ["Btn_New"] = ("Nouveau", "جديد"),
         ["Btn_Pdf"] = ("PDF", "PDF"),

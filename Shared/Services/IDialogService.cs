@@ -5,6 +5,7 @@ public interface IDialogService
     Task ShowInfoAsync(string title, string message, CancellationToken cancellationToken = default, int autoCloseMs = 0);
     Task ShowErrorAsync(string title, string message, CancellationToken cancellationToken = default);
     Task<bool> ConfirmAsync(string title, string message, CancellationToken cancellationToken = default);
+    Task<bool> ConfirmAvailabilityWarningAsync(AvailabilityWarningDialogModel model, CancellationToken cancellationToken = default);
     Task<string?> PromptPasswordAsync(string title, string message, CancellationToken cancellationToken = default);
     Task<string?> PickOpenFileAsync(string title, IReadOnlyList<string> patterns, CancellationToken cancellationToken = default);
     Task<string?> PickFolderAsync(CancellationToken cancellationToken = default);

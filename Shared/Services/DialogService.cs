@@ -55,20 +55,21 @@ public sealed class DialogService : IDialogService
         var w = new Window
         {
             Title = title,
-            MinWidth = 260,
-            MaxWidth = 440,
+            MinWidth = 360,
+            MaxWidth = 520,
             SizeToContent = SizeToContent.WidthAndHeight,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false
         };
 
         var confirmed = false;
-        var panel = new StackPanel { Margin = new Avalonia.Thickness(16), Spacing = 12 };
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 };
         panel.Children.Add(new TextBlock
         {
             Text = message,
             TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-            MaxWidth = 400
+            MaxWidth = 480,
+            LineHeight = 22
         });
 
         var buttons = new StackPanel
@@ -101,6 +102,218 @@ public sealed class DialogService : IDialogService
             w.Show();
 
         return confirmed;
+    }
+
+    public async Task<bool> ConfirmAvailabilityWarningAsync(
+        AvailabilityWarningDialogModel model,
+        CancellationToken cancellationToken = default)
+    {
+        var owner = GetMainWindow();
+        var w = new Window
+        {
+            Title = model.Title,
+            MinWidth = 420,
+            Width = 480,
+            MaxWidth = 560,
+            MaxHeight = 640,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var confirmed = false;
+        var root = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 14 };
+
+        root.Children.Add(new TextBlock
+        {
+            Text = model.Header,
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            FontSize = 15
+        });
+
+        root.Children.Add(CreateChip(
+            model.PeriodText,
+            bg: "#FEF3C7",
+            border: "#FCD34D",
+            fg: "#92400E",
+            bold: true));
+
+        var productsHost = new StackPanel { Spacing = 12 };
+        foreach (var product in model.Products)
+        {
+            var card = new Border
+            {
+                Background = Avalonia.Media.Brush.Parse("#FFFBF5"),
+                BorderBrush = Avalonia.Media.Brush.Parse("#E8DFD0"),
+                BorderThickness = new Avalonia.Thickness(1),
+                CornerRadius = new Avalonia.CornerRadius(10),
+                Padding = new Avalonia.Thickness(12)
+            };
+
+            var cardBody = new StackPanel { Spacing = 10 };
+            cardBody.Children.Add(new TextBlock
+            {
+                Text = product.ProductTitle,
+                FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+            });
+
+            var metrics = new WrapPanel { Orientation = Orientation.Horizontal };
+            metrics.Children.Add(CreateLabeledChip(product.DemandeLabel, product.DemandeValue, "#FEE2E2", "#FECACA", "#991B1B"));
+            metrics.Children.Add(CreateLabeledChip(product.DisponibleLabel, product.DisponibleValue, "#DCFCE7", "#86EFAC", "#166534"));
+            metrics.Children.Add(CreateLabeledChip(product.StockLabel, product.StockValue, "#E0E7FF", "#C7D2FE", "#3730A3"));
+            metrics.Children.Add(CreateLabeledChip(product.DejaLabel, product.DejaValue, "#FEF3C7", "#FCD34D", "#92400E"));
+            cardBody.Children.Add(metrics);
+
+            if (product.Conflicts.Count > 0)
+            {
+                cardBody.Children.Add(new TextBlock
+                {
+                    Text = product.ConflictsHeader ?? string.Empty,
+                    FontSize = 12,
+                    Opacity = 0.75,
+                    Margin = new Avalonia.Thickness(0, 4, 0, 0)
+                });
+
+                var conflictsWrap = new WrapPanel { Orientation = Orientation.Horizontal };
+                foreach (var conflict in product.Conflicts)
+                {
+                    conflictsWrap.Children.Add(CreateConflictChip(conflict.Title, conflict.Detail));
+                }
+                cardBody.Children.Add(conflictsWrap);
+            }
+
+            card.Child = cardBody;
+            productsHost.Children.Add(card);
+        }
+
+        root.Children.Add(new ScrollViewer
+        {
+            Content = productsHost,
+            MaxHeight = 420,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+        });
+
+        root.Children.Add(new TextBlock
+        {
+            Text = model.ConfirmQuestion,
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        });
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8
+        };
+        var no = new Button { Content = model.NoLabel, MinWidth = 88 };
+        no.Click += (_, _) =>
+        {
+            confirmed = false;
+            w.Close();
+        };
+        var yes = new Button { Content = model.YesLabel, IsDefault = true, MinWidth = 88 };
+        yes.Click += (_, _) =>
+        {
+            confirmed = true;
+            w.Close();
+        };
+        buttons.Children.Add(no);
+        buttons.Children.Add(yes);
+        root.Children.Add(buttons);
+
+        w.Content = root;
+
+        if (owner != null)
+            await w.ShowDialog(owner);
+        else
+            w.Show();
+
+        return confirmed;
+    }
+
+    private static Border CreateChip(string text, string bg, string border, string fg, bool bold = false) =>
+        new()
+        {
+            Background = Avalonia.Media.Brush.Parse(bg),
+            BorderBrush = Avalonia.Media.Brush.Parse(border),
+            BorderThickness = new Avalonia.Thickness(1),
+            CornerRadius = new Avalonia.CornerRadius(8),
+            Padding = new Avalonia.Thickness(10, 6),
+            Margin = new Avalonia.Thickness(0, 0, 8, 8),
+            Child = new TextBlock
+            {
+                Text = text,
+                Foreground = Avalonia.Media.Brush.Parse(fg),
+                FontWeight = bold ? Avalonia.Media.FontWeight.SemiBold : Avalonia.Media.FontWeight.Normal,
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+
+    private static Border CreateLabeledChip(string label, string value, string bg, string border, string fg)
+    {
+        var stack = new StackPanel { Spacing = 2 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 10,
+            Opacity = 0.75,
+            Foreground = Avalonia.Media.Brush.Parse(fg)
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = value,
+            FontSize = 14,
+            FontWeight = Avalonia.Media.FontWeight.Bold,
+            Foreground = Avalonia.Media.Brush.Parse(fg)
+        });
+
+        return new Border
+        {
+            Background = Avalonia.Media.Brush.Parse(bg),
+            BorderBrush = Avalonia.Media.Brush.Parse(border),
+            BorderThickness = new Avalonia.Thickness(1),
+            CornerRadius = new Avalonia.CornerRadius(8),
+            Padding = new Avalonia.Thickness(10, 6),
+            Margin = new Avalonia.Thickness(0, 0, 8, 8),
+            MinWidth = 96,
+            Child = stack
+        };
+    }
+
+    private static Border CreateConflictChip(string title, string detail)
+    {
+        var stack = new StackPanel { Spacing = 2 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 12,
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            Foreground = Avalonia.Media.Brush.Parse("#1E3A5F"),
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            MaxWidth = 200
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = detail,
+            FontSize = 11,
+            Opacity = 0.8,
+            Foreground = Avalonia.Media.Brush.Parse("#1E3A5F")
+        });
+
+        return new Border
+        {
+            Background = Avalonia.Media.Brush.Parse("#EFF6FF"),
+            BorderBrush = Avalonia.Media.Brush.Parse("#BFDBFE"),
+            BorderThickness = new Avalonia.Thickness(1),
+            CornerRadius = new Avalonia.CornerRadius(8),
+            Padding = new Avalonia.Thickness(10, 6),
+            Margin = new Avalonia.Thickness(0, 0, 8, 8),
+            Child = stack
+        };
     }
 
     public async Task<string?> PromptPasswordAsync(string title, string message, CancellationToken cancellationToken = default)

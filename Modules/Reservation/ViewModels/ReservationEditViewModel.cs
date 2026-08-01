@@ -33,6 +33,7 @@ public partial class ReservationEditViewModel : BaseViewModel
     private readonly ILocaleService _locale;
     private readonly IAppSettingsService _settings;
     private readonly IReservationWorkflowService _workflow;
+    private readonly IReservationAvailabilityService _availability;
     private readonly AddLineCatalogSearchCoordinator _addLineSearch;
 
     public ReservationEditViewModel(
@@ -45,7 +46,8 @@ public partial class ReservationEditViewModel : BaseViewModel
         ILocaleService locale,
         IAppSettingsService settings,
         ICatalogSearchService catalogSearch,
-        IReservationWorkflowService workflow)
+        IReservationWorkflowService workflow,
+        IReservationAvailabilityService availability)
     {
         _dbFactory = dbFactory;
         _numbers = numbers;
@@ -56,6 +58,7 @@ public partial class ReservationEditViewModel : BaseViewModel
         _locale = locale;
         _settings = settings;
         _workflow = workflow;
+        _availability = availability;
         _addLineSearch = new AddLineCatalogSearchCoordinator(catalogSearch);
         _locale.CultureApplied += (_, _) => RefreshUi();
         ProduitLignes.CollectionChanged += ProduitLignesOnCollectionChanged;
@@ -704,6 +707,29 @@ public partial class ReservationEditViewModel : BaseViewModel
 
         RefreshDerivedStatut();
 
+        var periodEnd = DateRetourEffective?.Date ?? DateFinPrevue.Date;
+        var conflicts = await _availability.CheckAsync(
+            ReservationId,
+            DateDebut.Date,
+            periodEnd,
+            ProduitLignes
+                .Where(l => l.ProduitId is > 0)
+                .Select(l => new ReservationAvailabilityLineRequest(
+                    l.ProduitId!.Value,
+                    l.Quantite,
+                    l.QuantiteRetournee)),
+            cancellationToken);
+
+        if (conflicts.Count > 0)
+        {
+            var periodStart = DateDebut.Date;
+            if (periodEnd < periodStart)
+                (periodStart, periodEnd) = (periodEnd, periodStart);
+            var model = BuildAvailabilityWarningModel(periodStart, periodEnd, conflicts);
+            if (!await _dialog.ConfirmAvailabilityWarningAsync(model, cancellationToken))
+                return;
+        }
+
         IsBusy = true;
         try
         {
@@ -773,6 +799,49 @@ public partial class ReservationEditViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+    }
+
+    private AvailabilityWarningDialogModel BuildAvailabilityWarningModel(
+        DateTime periodStart,
+        DateTime periodEnd,
+        IReadOnlyList<ReservationAvailabilityConflict> conflicts)
+    {
+        var products = conflicts.Select(c =>
+        {
+            var productTitle = string.IsNullOrWhiteSpace(c.Reference)
+                ? c.Designation
+                : $"{c.Designation}  ({c.Reference})";
+
+            return new AvailabilityWarningProductBlock
+            {
+                ProductTitle = productTitle,
+                DemandeLabel = _locale.T("Loc_AvailWarnDemande"),
+                DemandeValue = c.Demande.ToString("N0"),
+                DisponibleLabel = _locale.T("Loc_AvailWarnDisponible"),
+                DisponibleValue = c.Disponible.ToString("N0"),
+                StockLabel = _locale.T("Loc_AvailWarnStock"),
+                StockValue = c.StockTotal.ToString("N0"),
+                DejaLabel = _locale.T("Loc_AvailWarnDeja"),
+                DejaValue = c.DejaReserve.ToString("N0"),
+                ConflictsHeader = c.Sources.Count > 0 ? _locale.T("Loc_AvailWarnConflicts") : null,
+                Conflicts = c.Sources.Take(8).Select(s => new AvailabilityWarningConflictChip
+                {
+                    Title = $"{s.Numero} — {s.ClientNom}",
+                    Detail = $"{s.DateDebut:dd/MM/yyyy} → {s.DateFin:dd/MM/yyyy}  ·  {s.QuantiteEncore:N0}"
+                }).ToList()
+            };
+        }).ToList();
+
+        return new AvailabilityWarningDialogModel
+        {
+            Title = _locale.T("Loc_AvailTitle"),
+            Header = _locale.T("Loc_AvailWarnHeader"),
+            PeriodText = _locale.Tf("Loc_AvailWarnPeriod", periodStart, periodEnd),
+            ConfirmQuestion = _locale.T("Loc_AvailWarnConfirm"),
+            YesLabel = _locale.T("Btn_Yes"),
+            NoLabel = _locale.T("Btn_No"),
+            Products = products
+        };
     }
 
     private ReservationProduitLigne ToProduitEntityLine(ReservationProduitLineRow l)
