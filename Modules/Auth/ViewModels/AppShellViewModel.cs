@@ -10,7 +10,6 @@ using GestionCommerciale.Modules.FactureFournisseur.ViewModels;
 using GestionCommerciale.Modules.Livraison.ViewModels;
 using GestionCommerciale.Modules.Reservation.ViewModels;
 using GestionCommerciale.Modules.CommandeFournisseur.ViewModels;
-using GestionCommerciale.Modules.CommandeClient.ViewModels;
 using GestionCommerciale.Modules.Pos.ViewModels;
 using GestionCommerciale.Modules.Reception.ViewModels;
 using GestionCommerciale.Modules.Reporting.ViewModels;
@@ -65,7 +64,6 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty] private string _navAchat = string.Empty;
     [ObservableProperty] private string _navClients = string.Empty;
     [ObservableProperty] private string _navDevis = string.Empty;
-    [ObservableProperty] private string _navBcc = string.Empty;
     [ObservableProperty] private string _navBl = string.Empty;
     [ObservableProperty] private string _navLocation = string.Empty;
     [ObservableProperty] private string _navEtatClient = string.Empty;
@@ -92,7 +90,6 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty] private bool _isNavClientsActive;
     [ObservableProperty] private bool _isNavFournisseursActive;
     [ObservableProperty] private bool _isNavDevisActive;
-    [ObservableProperty] private bool _isNavBccActive;
     [ObservableProperty] private bool _isNavBlActive;
     [ObservableProperty] private bool _isNavLocationActive;
     [ObservableProperty] private bool _isNavEtatClientActive;
@@ -117,7 +114,6 @@ public partial class AppShellViewModel : BaseViewModel
         NavAchat = _locale.T("Nav_Achat");
         NavClients = _locale.T("Nav_Clients");
         NavDevis = _locale.T("Nav_Devis");
-        NavBcc = _locale.T("Nav_BCC");
         NavBl = _locale.T("Nav_BL");
         NavLocation = _locale.T("Nav_Location");
         NavEtatClient = _locale.T("Nav_EtatClient");
@@ -191,7 +187,6 @@ public partial class AppShellViewModel : BaseViewModel
     public bool ShowNavStock => _session.CanAccessStock;
     public bool ShowNavProduits => _session.CanAccessStock;
     public bool ShowNavDevis => _session.CanAccessDevis;
-    public bool ShowNavBCC => _session.CanAccessDevis;
     public bool ShowNavBL => _session.CanAccessBL;
     public bool ShowNavLocation => _session.CanAccessLocation;
     public bool ShowNavEtatClient => _session.CanAccessLocation;
@@ -244,14 +239,6 @@ public partial class AppShellViewModel : BaseViewModel
 
     [RelayCommand]
     private void GoDevis() => _workspace.Open(_sp.GetRequiredService<DevisListViewModel>());
-
-    [RelayCommand]
-    private void GoBCV()
-    {
-        var vm = _sp.GetRequiredService<BCVListViewModel>();
-        _workspace.Open(vm);
-        vm.LoadCommand.Execute(null);
-    }
 
     [RelayCommand]
     private void GoBL() => _workspace.Open(_sp.GetRequiredService<BLListViewModel>());
@@ -342,7 +329,6 @@ public partial class AppShellViewModel : BaseViewModel
         IsNavFournisseursActive = p is TiersListViewModel tiersList && tiersList.Scope == TiersListScope.Fournisseurs
             || p is TiersDetailViewModel tiersDetail && tiersDetail.ListScope == TiersListScope.Fournisseurs;
         IsNavDevisActive = p is DevisListViewModel or DevisEditViewModel;
-        IsNavBccActive = p is BCVListViewModel or BCVEditViewModel;
         IsNavBlActive = p is BLListViewModel or BLEditViewModel;
         IsNavLocationActive = p is ReservationListViewModel or ReservationEditViewModel;
         IsNavEtatClientActive = p is EtatClientViewModel;

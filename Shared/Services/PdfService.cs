@@ -1,6 +1,5 @@
 using GestionCommerciale.Modules.AvoirFournisseur.Models;
 using GestionCommerciale.Modules.CommandeFournisseur.Models;
-using GestionCommerciale.Modules.CommandeClient.Models;
 using GestionCommerciale.Modules.Devis.Models;
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.Facturation.Services;
@@ -199,43 +198,6 @@ public sealed class PdfService : IPdfService
         };
 
         var model = BaseModel(cfg, "BON DE COMMANDE", docLines, PartyLines(party, "Fournisseur"), cols, rows, (ht, tva, ht + tva), bc.Note, vis.ShowMontantTtc);
-        return CommercialDocumentPdfRenderer.Render(model, TryLoadLogoBytes(cfg.SocieteLogoPath));
-    }
-
-    public async Task<byte[]> BuildBonCommandeClientPdfAsync(BonCommandeClient bc, DocumentPartyPdfInfo party, CancellationToken cancellationToken = default)
-    {
-        var cfg = await _settings.GetAsync(cancellationToken);
-        var meta = await LoadProductMetaAsync(bc.Lignes.Select(l => l.ProduitId), cancellationToken);
-        decimal ht = 0, tva = 0;
-        var vis = _uiPreferences.GetDocumentLineColumnVisibility("bon_commande_client");
-        var lineData = new List<StandardPdfLine>();
-        foreach (var l in bc.Lignes)
-        {
-            var lht = DocumentTotalsHelper.LigneHT(l.QuantiteCommandee, l.PrixUnitaireHT, l.Remise);
-            ht += lht;
-            tva += lht * (l.TauxTVA / 100m);
-            var ttc = lht * (1 + l.TauxTVA / 100m);
-            lineData.Add(new StandardPdfLine(
-                RefCell(meta, l.ProduitId),
-                l.Designation,
-                FmtQty(l.QuantiteCommandee),
-                l.Conditionnement,
-                FmtUnitPrice(l.PrixUnitaireHT),
-                FmtTvaPct(l.TauxTVA),
-                FmtMoney(l.Remise),
-                FmtMoney(lht),
-                FmtMoney(ttc)));
-        }
-
-        var (cols, rows) = BuildStandardPdfTable(vis, supportsLineRemise: true, "Qté", lineData);
-
-        var docLines = new List<PdfKeyValueLine>
-        {
-            new("N°", bc.Numero),
-            new("Date", bc.Date.ToString("dd/MM/yyyy"))
-        };
-
-        var model = BaseModel(cfg, "BON DE COMMANDE", docLines, PartyLines(party, "Client"), cols, rows, (ht, tva, ht + tva), bc.Note, vis.ShowMontantTtc);
         return CommercialDocumentPdfRenderer.Render(model, TryLoadLogoBytes(cfg.SocieteLogoPath));
     }
 

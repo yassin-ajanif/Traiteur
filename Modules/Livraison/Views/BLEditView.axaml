@@ -24,10 +24,6 @@
         </Border.ContextMenu>
         <StackPanel Orientation="Horizontal" Spacing="12">
           <TextBlock Text="{Binding Numero}" FontWeight="Bold"/>
-          <Border Padding="6,2" Background="#DBEAFE" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="4"
-                  IsVisible="{Binding HasBccLabel}">
-            <TextBlock Text="{Binding BccLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF"/>
-          </Border>
           <Border Padding="6,2" Background="#DCFCE7" BorderBrush="#86EFAC" BorderThickness="1" CornerRadius="4"
                   IsVisible="{Binding HasInvoicedLabel}" Cursor="Hand" Tapped="OnInvoicedChipTapped">
             <TextBlock Text="{Binding InvoicedLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#166534"/>
@@ -57,14 +53,6 @@
           <DatePicker SelectedDate="{Binding Date}"/>
         </StackPanel>
       </Grid>
-      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-        <TextBlock Text="{Binding LblLinkedBcc}" Opacity="0.7" VerticalAlignment="Center"/>
-        <Button Content="{Binding BtnAddBcc}" Command="{Binding ShowBccPickerCommand}" IsEnabled="{Binding CanEdit}"/>
-        <TextBox MinWidth="180" MaxWidth="320" VerticalAlignment="Center"
-                 Watermark="{Binding WmBonCommandeReference}"
-                 Text="{Binding BonCommandeReference, Mode=TwoWay}"
-                 IsEnabled="{Binding CanEdit}"/>
-      </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="{Binding LblAddProduct}" VerticalAlignment="Center" Opacity="0.7"/>
         <AutoCompleteBox MinWidth="360" MaxWidth="520" VerticalAlignment="Center"

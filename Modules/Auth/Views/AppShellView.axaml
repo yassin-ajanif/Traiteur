@@ -38,18 +38,14 @@
                     Background="{Binding IsNavDevisActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
                     Foreground="{Binding IsNavDevisActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
                     BorderBrush="{Binding IsNavDevisActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
-            <Button Content="{Binding NavBcc}" Command="{Binding GoBCVCommand}" HorizontalAlignment="Stretch" IsVisible="{Binding ShowNavBCC}"
-                    Background="{Binding IsNavBccActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
-                    Foreground="{Binding IsNavBccActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
-                    BorderBrush="{Binding IsNavBccActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
-            <Button Content="{Binding NavBl}" Command="{Binding GoBLCommand}" HorizontalAlignment="Stretch" IsVisible="{Binding ShowNavBL}"
-                    Background="{Binding IsNavBlActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
-                    Foreground="{Binding IsNavBlActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
-                    BorderBrush="{Binding IsNavBlActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
             <Button Content="{Binding NavLocation}" Command="{Binding GoLocationCommand}" HorizontalAlignment="Stretch" IsVisible="{Binding ShowNavLocation}"
                     Background="{Binding IsNavLocationActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
                     Foreground="{Binding IsNavLocationActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
                     BorderBrush="{Binding IsNavLocationActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
+            <Button Content="{Binding NavBl}" Command="{Binding GoBLCommand}" HorizontalAlignment="Stretch" IsVisible="{Binding ShowNavBL}"
+                    Background="{Binding IsNavBlActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
+                    Foreground="{Binding IsNavBlActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"
+                    BorderBrush="{Binding IsNavBlActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=border}"/>
             <Button Content="{Binding NavEtatClient}" Command="{Binding GoEtatClientCommand}" HorizontalAlignment="Stretch" IsVisible="{Binding ShowNavEtatClient}"
                     Background="{Binding IsNavEtatClientActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=bg}"
                     Foreground="{Binding IsNavEtatClientActive, Converter={x:Static conv:NavTabHighlightConverter.Instance}, ConverterParameter=fg}"

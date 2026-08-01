@@ -36,7 +36,6 @@ public partial class FactureEditViewModel : BaseViewModel
     private readonly IPdfService _pdf;
     private readonly IPdfPrintService _pdfPrint;
     private readonly IFactureBlLinkService _blLinkService;
-    private readonly IFactureBccLinkService _bccLinkService;
     private readonly AddLineCatalogSearchCoordinator _addLineSearch;
 
     public FactureEditViewModel(
@@ -45,7 +44,6 @@ public partial class FactureEditViewModel : BaseViewModel
         IAppSettingsService settings,
         IFactureWorkflowService factureWorkflow,
         IFactureBlLinkService blLinkService,
-        IFactureBccLinkService bccLinkService,
         IDialogService dialog,
         WorkspaceNavigator workspaceNavigator,
         IServiceProvider sp,
@@ -69,7 +67,6 @@ public partial class FactureEditViewModel : BaseViewModel
         _pdf = pdf;
         _pdfPrint = pdfPrint;
         _blLinkService = blLinkService;
-        _bccLinkService = bccLinkService;
         _addLineSearch = new AddLineCatalogSearchCoordinator(catalogSearch);
         _locale.CultureApplied += (_, _) =>
         {
@@ -157,9 +154,6 @@ public partial class FactureEditViewModel : BaseViewModel
     [ObservableProperty] private string _lblDocColMontantTtc = string.Empty;
     [ObservableProperty] private string _lblLinkedBls = string.Empty;
     [ObservableProperty] private string _btnAddBl = string.Empty;
-    [ObservableProperty] private string _lblLinkedBccs = string.Empty;
-    [ObservableProperty] private string _btnAddBcc = string.Empty;
-    [ObservableProperty] private string _wmBonCommandeReference = string.Empty;
 
     public DocumentLineGridColumnState LineGridColumns { get; } = new();
     public bool ShowTotalTva => LineGridColumns.ShowTva && LineGridColumns.ShowMontantTtc;
@@ -226,9 +220,6 @@ public partial class FactureEditViewModel : BaseViewModel
         LblDocColMontantTtc = _locale.T("DocLine_ColMontantTtc");
         LblLinkedBls = _locale.T("Fact_LinkedBls");
         BtnAddBl = _locale.T("Fact_AddBl");
-        LblLinkedBccs = _locale.T("Fact_LinkedBccs");
-        BtnAddBcc = _locale.T("Fact_AddBcc");
-        WmBonCommandeReference = _locale.T("Fact_WmBonCommandeReference");
     }
 
     private void UpdateFactureTotalLines()
@@ -614,53 +605,6 @@ public partial class FactureEditViewModel : BaseViewModel
     public void LoadFromBL(int blId) => _ = LoadFromBlsAsync([blId], CancellationToken.None);
 
     [RelayCommand]
-    private async Task ShowBccPickerAsync(CancellationToken cancellationToken)
-    {
-        if (ClientId == 0) return;
-        var existingNumeros = ParseBonCommandeNumeros(BonCommandeReference);
-        var available = await _bccLinkService.GetAvailableBccsForClientAsync(ClientId, FactureId, cancellationToken);
-        var filtered = available.Where(b => !existingNumeros.Contains(b.Numero, StringComparer.OrdinalIgnoreCase)).ToList();
-        if (filtered.Count == 0)
-        {
-            await _dialog.ShowInfoAsync(_locale.T("Fact_Title"), _locale.T("Fact_NoAvailableBccs"), cancellationToken);
-            return;
-        }
-
-        var pickerItems = filtered.Select(b =>
-        {
-            var (_, _, ttc) = DocumentTotalsHelper.BonCommandeClientTotals(b.Lignes ?? []);
-            var montantLabel = _locale.Tf("Doc_FmtTtc", ttc, Devise).TrimEnd();
-            return (b.Id, b.Numero, b.Date, montantLabel);
-        }).ToList();
-        var selectedIds = await _dialog.ShowBlPickerAsync(_locale.T("Fact_AddBcc"), pickerItems, cancellationToken);
-        if (selectedIds == null || selectedIds.Count == 0) return;
-
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
-        var selectedNumeros = await db.BonsCommandeClient.AsNoTracking()
-            .Where(b => selectedIds.Contains(b.Id))
-            .OrderBy(b => b.Date).ThenBy(b => b.Numero)
-            .Select(b => b.Numero)
-            .ToListAsync(cancellationToken);
-
-        foreach (var numero in selectedNumeros)
-            AppendBonCommandeNumero(numero);
-    }
-
-    private static HashSet<string> ParseBonCommandeNumeros(string reference) =>
-        reference.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-    private void AppendBonCommandeNumero(string numero)
-    {
-        if (string.IsNullOrWhiteSpace(numero)) return;
-        var existing = ParseBonCommandeNumeros(BonCommandeReference);
-        if (existing.Contains(numero)) return;
-        BonCommandeReference = string.IsNullOrWhiteSpace(BonCommandeReference)
-            ? numero
-            : $"{BonCommandeReference}, {numero}";
-    }
-
-    [RelayCommand]
     private void RemoveBlGroup(LinkedBlRow bl)
     {
         for (var i = Lignes.Count - 1; i >= 0; i--)
@@ -906,8 +850,6 @@ public partial class FactureEditViewModel : BaseViewModel
                         blEntity.FactureId = entity.Id;
                 }
 
-                await _bccLinkService.AssignBccsToFactureAsync(db, entity.Id, [], cancellationToken);
-
                 await db.SaveChangesAsync(cancellationToken);
             }
             else
@@ -957,8 +899,6 @@ public partial class FactureEditViewModel : BaseViewModel
                 if (blEntity != null)
                     blEntity.FactureId = FactureId;
             }
-
-            await _bccLinkService.AssignBccsToFactureAsync(db, FactureId!.Value, [], cancellationToken);
 
             await db.SaveChangesAsync(cancellationToken);
 

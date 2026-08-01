@@ -40,7 +40,6 @@ public partial class BLEditViewModel : BaseViewModel
     private readonly IPdfPrintService _pdfPrint;
     private readonly IAppSettingsService _settings;
     private readonly IFactureBlLinkService _blLinkService;
-    private readonly IFactureBccLinkService _bccLinkService;
     private readonly AddLineCatalogSearchCoordinator _addLineSearch;
 
     public BLEditViewModel(
@@ -58,7 +57,6 @@ public partial class BLEditViewModel : BaseViewModel
         IPdfPrintService pdfPrint,
         IAppSettingsService settings,
         IFactureBlLinkService blLinkService,
-        IFactureBccLinkService bccLinkService,
         ICatalogSearchService catalogSearch)
     {
         _dbFactory = dbFactory;
@@ -75,7 +73,6 @@ public partial class BLEditViewModel : BaseViewModel
         _pdfPrint = pdfPrint;
         _settings = settings;
         _blLinkService = blLinkService;
-        _bccLinkService = bccLinkService;
         _addLineSearch = new AddLineCatalogSearchCoordinator(catalogSearch);
         _locale.CultureApplied += (_, _) => RefreshBlUi();
         LineGridColumns.PropertyChanged += OnLineGridColumnsPropertyChanged;
@@ -113,20 +110,10 @@ public partial class BLEditViewModel : BaseViewModel
     [ObservableProperty] private string _lblTotals = string.Empty;
     [ObservableProperty] private string _invoicedLabel = string.Empty;
     [ObservableProperty] private int? _linkedFactureId;
-    [ObservableProperty] private string _bccLabel = string.Empty;
-    [ObservableProperty] private string _lblLinkedBcc = string.Empty;
-    [ObservableProperty] private string _btnAddBcc = string.Empty;
-    [ObservableProperty] private string _wmBonCommandeReference = string.Empty;
     [ObservableProperty] private string _bonCommandeReference = string.Empty;
     public bool HasInvoicedLabel => !string.IsNullOrEmpty(InvoicedLabel);
-    public bool HasBccLabel => !string.IsNullOrWhiteSpace(BonCommandeReference);
 
     partial void OnInvoicedLabelChanged(string value) => OnPropertyChanged(nameof(HasInvoicedLabel));
-    partial void OnBonCommandeReferenceChanged(string value)
-    {
-        UpdateBccLabel();
-        OnPropertyChanged(nameof(HasBccLabel));
-    }
 
     [ObservableProperty] private decimal _totalHt;
     [ObservableProperty] private decimal _totalTva;
@@ -215,18 +202,7 @@ public partial class BLEditViewModel : BaseViewModel
         LblDocColMontantHt = _locale.T("DocLine_ColMontantHt");
         LblDocColMontantTtc = _locale.T("DocLine_ColMontantTtc");
         LblTotals = _locale.T("Lbl_Totals");
-        LblLinkedBcc = _locale.T("Fact_LinkedBccs");
-        BtnAddBcc = _locale.T("Fact_AddBcc");
-        WmBonCommandeReference = _locale.T("Fact_WmBonCommandeReference");
-        UpdateBccLabel();
         UpdateTotalLabels(TotalHt, TotalTva, TotalTtc);
-    }
-
-    private void UpdateBccLabel()
-    {
-        BccLabel = string.IsNullOrWhiteSpace(BonCommandeReference)
-            ? string.Empty
-            : _locale.Tf("BL_LinkedBcc", BonCommandeReference);
     }
 
     public ObservableCollection<GestionCommerciale.Modules.Tiers.Models.Tiers> Clients { get; } = [];
@@ -378,7 +354,6 @@ public partial class BLEditViewModel : BaseViewModel
     {
         BlId = id;
         BonCommandeReference = string.Empty;
-        BccLabel = string.Empty;
         DevisId = null;
         Lignes.Clear();
         ResetAddProductSearch();
@@ -426,7 +401,6 @@ public partial class BLEditViewModel : BaseViewModel
                 .Select(x => x.Numero)
                 .FirstAsync(cancellationToken);
         }
-        UpdateBccLabel();
         Numero = b.Numero;
         ClientId = b.ClientId;
         Date = new DateTimeOffset(b.Date);
@@ -460,57 +434,6 @@ public partial class BLEditViewModel : BaseViewModel
     }
 
     public void Load(int? id) => _ = LoadAsync(id, CancellationToken.None);
-
-    public async Task LoadNewFromBonCommandeClientAsync(int bonCommandeClientId, CancellationToken cancellationToken = default)
-    {
-        BlId = null;
-        BonCommandeReference = string.Empty;
-        BccLabel = string.Empty;
-        Lignes.Clear();
-        ResetAddProductSearch();
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
-
-        var bcc = await db.BonsCommandeClient.Include(x => x.Lignes).FirstAsync(x => x.Id == bonCommandeClientId, cancellationToken);
-
-        var clients = await db.Tiers.AsNoTracking()
-            .Where(t => t.Actif && (t.Type == TypeTiers.Client || t.Type == TypeTiers.LesDeux))
-            .OrderBy(t => t.Nom).ToListAsync(cancellationToken);
-        Clients.Clear();
-        foreach (var c in clients) Clients.Add(c);
-
-        ClientId = bcc.ClientId;
-        DevisId = bcc.DevisId;
-        Date = new DateTimeOffset(DateTime.Today);
-        Note = string.Empty;
-        Numero = "(brouillon)";
-        var catalogRefs = await DocumentLineCatalogLookups.LoadAsync(
-            db,
-            bcc.Lignes.Select(l => (l.ProduitId, l.ServiceId)),
-            cancellationToken);
-        foreach (var l in bcc.Lignes.OrderBy(x => x.Id))
-        {
-            var row = new BLLineRow
-            {
-                ProduitId = l.ProduitId,
-                ServiceId = l.ServiceId,
-                Reference = catalogRefs.GetReference(l.ProduitId, l.ServiceId),
-                Designation = l.Designation,
-                Conditionnement = l.Conditionnement,
-                QuantiteCommandee = l.QuantiteCommandee,
-                QuantiteLivree = l.QuantiteCommandee,
-                PrixUnitaireHt = l.PrixUnitaireHT,
-                Remise = l.Remise,
-                TauxTva = l.TauxTVA
-            };
-            row.PropertyChanged += LineOnPropertyChanged;
-            Lignes.Add(row);
-        }
-
-        IsReadOnly = false;
-        AppendBonCommandeNumero(bcc.Numero);
-        Title = _locale.Tf("BL_NewFromBcc", bcc.Numero);
-        RefreshTotals();
-    }
 
     public async Task LoadFromDevisAsync(int devisId, CancellationToken cancellationToken = default)
     {
@@ -705,56 +628,6 @@ public partial class BLEditViewModel : BaseViewModel
         {
             IsBusy = false;
         }
-    }
-
-    [RelayCommand]
-    private async Task ShowBccPickerAsync(CancellationToken cancellationToken)
-    {
-        if (!CanEdit || ClientId == 0) return;
-
-        var existingNumeros = ParseBonCommandeNumeros(BonCommandeReference);
-        var available = await _bccLinkService.GetAvailableBccsForClientAsync(ClientId, null, cancellationToken);
-        var filtered = available.Where(b => !existingNumeros.Contains(b.Numero, StringComparer.OrdinalIgnoreCase)).ToList();
-        if (filtered.Count == 0)
-        {
-            await _dialog.ShowInfoAsync(_locale.T("BL_DlgShort"), _locale.T("Fact_NoAvailableBccs"), cancellationToken);
-            return;
-        }
-
-        var pickerItems = filtered.Select(b =>
-        {
-            var (_, _, ttc) = DocumentTotalsHelper.BonCommandeClientTotals(b.Lignes ?? []);
-            var montantLabel = _locale.Tf("Doc_FmtTtc", ttc, Devise).TrimEnd();
-            return (b.Id, b.Numero, b.Date, montantLabel);
-        }).ToList();
-
-        var selectedIds = await _dialog.ShowBlPickerAsync(_locale.T("Fact_AddBcc"), pickerItems, cancellationToken);
-        if (selectedIds == null || selectedIds.Count == 0) return;
-
-        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
-        var selectedNumeros = await db.BonsCommandeClient.AsNoTracking()
-            .Where(b => selectedIds.Contains(b.Id))
-            .OrderBy(b => b.Date).ThenBy(b => b.Numero)
-            .Select(b => b.Numero)
-            .ToListAsync(cancellationToken);
-
-        foreach (var numero in selectedNumeros)
-            AppendBonCommandeNumero(numero);
-    }
-
-    private static HashSet<string> ParseBonCommandeNumeros(string reference) =>
-        reference.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-    private void AppendBonCommandeNumero(string numero)
-    {
-        if (string.IsNullOrWhiteSpace(numero)) return;
-        var existing = ParseBonCommandeNumeros(BonCommandeReference);
-        if (existing.Contains(numero)) return;
-        BonCommandeReference = string.IsNullOrWhiteSpace(BonCommandeReference)
-            ? numero
-            : $"{BonCommandeReference}, {numero}";
-        UpdateBccLabel();
     }
 
     [RelayCommand]

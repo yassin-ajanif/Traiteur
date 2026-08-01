@@ -1,5 +1,4 @@
 using GestionCommerciale.Modules.AvoirFournisseur.Models;
-using GestionCommerciale.Modules.CommandeClient.Models;
 using GestionCommerciale.Modules.CommandeFournisseur.Models;
 using GestionCommerciale.Modules.Devis.Models;
 using GestionCommerciale.Modules.Facturation.Models;
@@ -153,20 +152,6 @@ public static class DocumentTotalsHelper
 
     /// <summary>Same semantics as <c>BCEditViewModel.RefreshTotals</c> when TVA columns are shown.</summary>
     public static (decimal ht, decimal tva, decimal ttc) BonCommandeTotals(IEnumerable<BonCommandeLigne> lignes)
-    {
-        decimal ht = 0, tva = 0;
-        foreach (var l in lignes)
-        {
-            var lht = LigneHT(l.QuantiteCommandee, l.PrixUnitaireHT, l.Remise);
-            ht += lht;
-            tva += lht * (l.TauxTVA / 100m);
-        }
-
-        return (ht, tva, ht + tva);
-    }
-
-    /// <summary>Same semantics as <c>BCVEditViewModel.RefreshTotals</c> when TVA columns are shown.</summary>
-    public static (decimal ht, decimal tva, decimal ttc) BonCommandeClientTotals(IEnumerable<BonCommandeClientLigne> lignes)
     {
         decimal ht = 0, tva = 0;
         foreach (var l in lignes)

@@ -13,7 +13,6 @@ using GestionCommerciale.Modules.Livraison.ViewModels;
 using GestionCommerciale.Modules.Reservation.Services;
 using GestionCommerciale.Modules.Reservation.ViewModels;
 using GestionCommerciale.Modules.CommandeFournisseur.ViewModels;
-using GestionCommerciale.Modules.CommandeClient.ViewModels;
 using GestionCommerciale.Modules.Pos.Services;
 using GestionCommerciale.Modules.Pos.ViewModels;
 using GestionCommerciale.Modules.Reception.Services;
@@ -57,7 +56,6 @@ public static class DependencyInjection
         services.AddSingleton<IReservationWorkflowService, ReservationWorkflowService>();
         services.AddSingleton<IBonReceptionWorkflowService, BonReceptionWorkflowService>();
         services.AddSingleton<IFactureBlLinkService, FactureBlLinkService>();
-        services.AddSingleton<IFactureBccLinkService, FactureBccLinkService>();
         services.AddSingleton<IFactureFournisseurBrLinkService, FactureFournisseurBrLinkService>();
         services.AddSingleton<IFactureFournisseurWorkflowService, FactureFournisseurWorkflowService>();
         services.AddSingleton<IClientAccountStatementService, ClientAccountStatementService>();
@@ -85,8 +83,6 @@ public static class DependencyInjection
         services.AddTransient<ProduitsViewModel>();
         services.AddTransient<DevisListViewModel>();
         services.AddTransient<DevisEditViewModel>();
-        services.AddTransient<BCVListViewModel>();
-        services.AddTransient<BCVEditViewModel>();
         services.AddTransient<BLListViewModel>();
         services.AddTransient<BLEditViewModel>();
         services.AddTransient<ReservationListViewModel>();

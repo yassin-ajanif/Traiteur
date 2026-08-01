@@ -9,7 +9,7 @@ public static class UiTranslations
     {
         ["Nav_Home"] = ("Accueil", "الرئيسية"),
         ["Nav_Pos"] = ("Point de vente", "نقطة البيع"),
-        ["Nav_Vente"] = ("Location", "الكراء"),
+        ["Nav_Vente"] = ("Réservation", "الحجز"),
         ["Nav_Achat"] = ("Achat", "المشتريات"),
         ["Nav_Clients"] = ("Clients", "الكليان"),
         ["Nav_Devis"] = ("Devis", "الدوفيات"),

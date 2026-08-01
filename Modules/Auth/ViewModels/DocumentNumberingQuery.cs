@@ -12,11 +12,12 @@ internal static class DocumentNumberingQuery
             "BL" => db.BonsLivraison.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
             "BR" => db.BonsReception.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
             "BC" => db.BonsCommande.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
-            "BCC" => db.BonsCommandeClient.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
             "FAC" => db.Factures.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
             "FAF" => db.FacturesFournisseurs.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
             "AVO" => db.Avoirs.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
             "AVF" => db.AvoirsFournisseurs.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
+            "RES" => db.Reservations.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
+            "LOC" => db.Reservations.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken),
             _ => Task.FromResult(new List<string>())
         };
 }
