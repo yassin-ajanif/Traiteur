@@ -41,7 +41,8 @@
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Bottom" Margin="16,0,0,0">
           <TextBlock Text="{Binding LblDate}" VerticalAlignment="Center" Opacity="0.7"/>
-          <DatePicker SelectedDate="{Binding Date}"/>
+          <CalendarDatePicker SelectedDate="{Binding Date, Converter={StaticResource DateTimeOffsetDateConverter}}"
+                              SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"/>
         </StackPanel>
       </Grid>
       <StackPanel Orientation="Horizontal" Spacing="8">

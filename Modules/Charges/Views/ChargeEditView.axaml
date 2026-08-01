@@ -31,7 +31,10 @@
           </ComboBox>
 
           <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding LblDate}" VerticalAlignment="Center" Opacity="0.7" Margin="0,0,12,10"/>
-          <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding Date}" HorizontalAlignment="Left" Margin="0,0,0,10"/>
+          <CalendarDatePicker Grid.Row="1" Grid.Column="1"
+                              SelectedDate="{Binding Date, Converter={StaticResource DateTimeOffsetDateConverter}}"
+                              SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"
+                              HorizontalAlignment="Left" Margin="0,0,0,10"/>
 
           <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding LblLibelle}" VerticalAlignment="Center" Opacity="0.7" Margin="0,0,12,10"/>
           <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Libelle}" Watermark="{Binding LblLibelle}" Margin="0,0,0,10"/>

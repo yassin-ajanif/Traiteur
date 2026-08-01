@@ -399,15 +399,7 @@
     <Setter Property="CornerRadius" Value="10"/>
   </Style>
 
-  <!-- DatePicker: avoid huge default stretch (especially the month segment) -->
-  <Style Selector="DatePicker">
-    <Setter Property="HorizontalAlignment" Value="Left"/>
-    <Setter Property="MaxWidth" Value="318"/>
-  </Style>
-  <Style Selector="DatePicker ComboBox">
-    <Setter Property="MinWidth" Value="44"/>
-    <Setter Property="MaxWidth" Value="100"/>
-  </Style>
+  <!-- CalendarDatePicker sizing -->
   <Style Selector="CalendarDatePicker">
     <Setter Property="HorizontalAlignment" Value="Left"/>
     <Setter Property="MinWidth" Value="160"/>

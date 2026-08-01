@@ -66,9 +66,13 @@
         <Grid ColumnDefinitions="Auto,*,Auto,*,Auto" IsVisible="{Binding ShowDateFilter}"
               VerticalAlignment="Center">
           <TextBlock Grid.Column="0" Text="{Binding LblDateFrom}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-          <DatePicker Grid.Column="1" SelectedDate="{Binding DateFrom}" VerticalAlignment="Center"/>
+          <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding DateFrom, Converter={StaticResource DateTimeOffsetDateConverter}}"
+                              SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"
+                              VerticalAlignment="Center"/>
           <TextBlock Grid.Column="2" Text="{Binding LblDateTo}" VerticalAlignment="Center" Margin="12,0,8,0"/>
-          <DatePicker Grid.Column="3" SelectedDate="{Binding DateTo}" VerticalAlignment="Center"/>
+          <CalendarDatePicker Grid.Column="3" SelectedDate="{Binding DateTo, Converter={StaticResource DateTimeOffsetDateConverter}}"
+                              SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"
+                              VerticalAlignment="Center"/>
           <Button Grid.Column="4" Content="{Binding LblApply}" Command="{Binding LoadReportCommand}"
                   Margin="12,0,0,0" VerticalAlignment="Center"/>
         </Grid>

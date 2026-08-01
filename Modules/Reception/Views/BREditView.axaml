@@ -32,7 +32,9 @@
             </Border>
             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <TextBlock Text="{Binding LblDateBr}" VerticalAlignment="Center" Opacity="0.7"/>
-              <DatePicker SelectedDate="{Binding Date}" IsEnabled="{Binding CanEdit}"/>
+              <CalendarDatePicker SelectedDate="{Binding Date, Converter={StaticResource DateTimeOffsetDateConverter}}"
+                                  SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"
+                                  IsEnabled="{Binding CanEdit}"/>
             </StackPanel>
           </StackPanel>
         </StackPanel>

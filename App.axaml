@@ -11,6 +11,7 @@
         <conv:BoolActifLabelConverter x:Key="BoolActifLabelConverter"/>
         <conv:StockMovementTypeConverter x:Key="StockMovementTypeConverter"/>
         <conv:ModePaiementLabelConverter x:Key="ModePaiementLabelConverter"/>
+        <conv:DateTimeOffsetDateConverter x:Key="DateTimeOffsetDateConverter"/>
     </Application.Resources>
 
     <Application.DataTemplates>
