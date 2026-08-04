@@ -100,6 +100,7 @@ public partial class ReservationEditViewModel : BaseViewModel
     [ObservableProperty] private string _lblRetoursSection = string.Empty;
     [ObservableProperty] private string _lblRetourProduit = string.Empty;
     [ObservableProperty] private string _lblRetourQte = string.Empty;
+    [ObservableProperty] private string _lblRetourEtat = string.Empty;
     [ObservableProperty] private string _lblRetourNote = string.Empty;
     [ObservableProperty] private string _btnAddRetour = string.Empty;
     [ObservableProperty] private string _btnDeleteRetour = string.Empty;
@@ -107,6 +108,7 @@ public partial class ReservationEditViewModel : BaseViewModel
     [ObservableProperty] private string _lblHistColDate = string.Empty;
     [ObservableProperty] private string _lblHistColProduit = string.Empty;
     [ObservableProperty] private string _lblHistColQte = string.Empty;
+    [ObservableProperty] private string _lblHistColEtat = string.Empty;
     [ObservableProperty] private string _lblHistColNote = string.Empty;
 
     public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
@@ -261,6 +263,7 @@ public partial class ReservationEditViewModel : BaseViewModel
         LblRetoursSection = _locale.T("Res_SectionRetours");
         LblRetourProduit = _locale.T("Res_LblRetourProduit");
         LblRetourQte = _locale.T("Res_LblRetourQte");
+        LblRetourEtat = _locale.T("Res_LblRetourEtat");
         LblRetourNote = _locale.T("Res_LblRetourNote");
         BtnAddRetour = _locale.T("Res_BtnAddRetour");
         BtnDeleteRetour = _locale.T("Res_BtnDeleteRetour");
@@ -268,7 +271,9 @@ public partial class ReservationEditViewModel : BaseViewModel
         LblHistColDate = _locale.T("Res_HistColDate");
         LblHistColProduit = _locale.T("Res_HistColProduit");
         LblHistColQte = _locale.T("Res_HistColQte");
+        LblHistColEtat = _locale.T("Res_HistColEtat");
         LblHistColNote = _locale.T("Res_HistColNote");
+        RefreshRetourEtatOptions();
         NotifyStatutChip();
         UpdateTotalLabels(TotalHt, TotalTva, TotalTtc);
     }
@@ -278,6 +283,7 @@ public partial class ReservationEditViewModel : BaseViewModel
     public ObservableCollection<ReservationServiceLineRow> ServiceLignes { get; } = [];
     public ObservableCollection<ReservationRetourRow> Retours { get; } = [];
     public ObservableCollection<ReservationProduitLineRow> RetourProduitOptions { get; } = [];
+    public ObservableCollection<RetourEtatOption> RetourEtatOptions { get; } = [];
 
     [ObservableProperty] private int? _reservationId;
     [ObservableProperty] private int _clientId;
@@ -301,6 +307,7 @@ public partial class ReservationEditViewModel : BaseViewModel
     [ObservableProperty] private DateTime _newRetourDate = DateTime.Today;
     [ObservableProperty] private ReservationProduitLineRow? _newRetourProduit;
     [ObservableProperty] private decimal _newRetourQuantite = 1;
+    [ObservableProperty] private RetourEtatOption? _newRetourEtat;
     [ObservableProperty] private string _newRetourNote = string.Empty;
     [ObservableProperty] private ReservationRetourRow? _selectedRetour;
 
@@ -448,8 +455,10 @@ public partial class ReservationEditViewModel : BaseViewModel
                     {
                         DateRetour = ret.DateRetour,
                         Quantite = ret.Quantite,
+                        Etat = ret.Etat,
                         Note = ret.Note
                     });
+                    Retours[^1].SyncEtatOption(RetourEtatOptions);
                 }
                 line.PropertyChanged -= ProduitLineOnPropertyChanged;
                 ProduitLignes.Remove(line);
@@ -614,8 +623,12 @@ public partial class ReservationEditViewModel : BaseViewModel
                 {
                     DateRetour = ret.DateRetour.Date,
                     Quantite = ret.Quantite,
+                    Etat = ReservationProduitRetourEtats.IsValid(ret.Etat)
+                        ? ret.Etat
+                        : ReservationProduitRetourEtats.Good,
                     Note = ret.Note
                 });
+                Retours[^1].SyncEtatOption(RetourEtatOptions);
             }
         }
 
@@ -864,6 +877,9 @@ public partial class ReservationEditViewModel : BaseViewModel
             {
                 DateRetour = r.DateRetour.Date,
                 Quantite = r.Quantite,
+                Etat = ReservationProduitRetourEtats.IsValid(r.Etat)
+                    ? r.Etat
+                    : ReservationProduitRetourEtats.Good,
                 Note = r.Note ?? string.Empty,
                 CreatedByUserId = _session.UserId
             });
@@ -924,11 +940,43 @@ public partial class ReservationEditViewModel : BaseViewModel
             NewRetourProduit = RetourProduitOptions.FirstOrDefault();
     }
 
+    private void RefreshRetourEtatOptions()
+    {
+        var previous = NewRetourEtat?.Value;
+        RetourEtatOptions.Clear();
+        foreach (var value in ReservationProduitRetourEtats.All)
+        {
+            RetourEtatOptions.Add(new RetourEtatOption
+            {
+                Value = value,
+                Label = _locale.T(EtatTranslationKey(value))
+            });
+        }
+
+        NewRetourEtat = RetourEtatOptions.FirstOrDefault(o => o.Value == previous)
+                        ?? RetourEtatOptions.FirstOrDefault(o => o.Value == ReservationProduitRetourEtats.Good)
+                        ?? RetourEtatOptions.FirstOrDefault();
+
+        foreach (var row in Retours)
+            row.SyncEtatOption(RetourEtatOptions);
+    }
+
+    private static string EtatTranslationKey(string value) => value switch
+    {
+        ReservationProduitRetourEtats.Good => "Res_Etat_Good",
+        ReservationProduitRetourEtats.Damaged => "Res_Etat_Damaged",
+        ReservationProduitRetourEtats.Lost => "Res_Etat_Lost",
+        ReservationProduitRetourEtats.ToClean => "Res_Etat_ToClean",
+        _ => "Res_Etat_Good"
+    };
+
     private void ResetRetourForm()
     {
         NewRetourDate = DateTime.Today;
         NewRetourQuantite = 1;
         NewRetourNote = string.Empty;
+        NewRetourEtat = RetourEtatOptions.FirstOrDefault(o => o.Value == ReservationProduitRetourEtats.Good)
+                        ?? RetourEtatOptions.FirstOrDefault();
         RefreshRetourProduitOptions();
     }
 
@@ -948,17 +996,26 @@ public partial class ReservationEditViewModel : BaseViewModel
             return;
         }
 
-        Retours.Add(new ReservationRetourRow(line)
+        var etat = NewRetourEtat?.Value ?? ReservationProduitRetourEtats.Good;
+        if (!ReservationProduitRetourEtats.IsValid(etat))
+            etat = ReservationProduitRetourEtats.Good;
+
+        var row = new ReservationRetourRow(line)
         {
             DateRetour = NewRetourDate.Date,
             Quantite = NewRetourQuantite,
+            Etat = etat,
             Note = NewRetourNote?.Trim() ?? string.Empty
-        });
+        };
+        row.SyncEtatOption(RetourEtatOptions);
+        Retours.Add(row);
         SyncQuantiteRetourneeFromHistory();
         RefreshDerivedStatut();
         RefreshRetourProduitOptions();
         NewRetourQuantite = 1;
         NewRetourNote = string.Empty;
+        NewRetourEtat = RetourEtatOptions.FirstOrDefault(o => o.Value == ReservationProduitRetourEtats.Good)
+                        ?? RetourEtatOptions.FirstOrDefault();
     }
 
     [RelayCommand]

@@ -291,7 +291,13 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ReservationProduitRetour>(e =>
         {
-            e.ToTable("ReservationProduitRetours");
+            e.ToTable("ReservationProduitRetours", t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_ReservationProduitRetours_Etat",
+                    "\"Etat\" IN ('good', 'damaged', 'lost', 'to clean')");
+            });
+            e.Property(r => r.Etat).IsRequired().HasMaxLength(32);
             e.HasIndex(r => r.ReservationProduitLigneId);
             e.HasIndex(r => r.DateRetour);
         });
